@@ -13,10 +13,54 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="dll">
+      <UniqueIdentifier>{9ff7756d-839d-4360-a4b9-e4d20a2d9cc1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dll\dpp">
+      <UniqueIdentifier>{57946052-a5f2-4416-83fc-a31a52b6ba5c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dll\dpp\debug">
+      <UniqueIdentifier>{e56c1431-9322-46d0-bdf4-c8a22fee87c0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dll\dpp\release">
+      <UniqueIdentifier>{bd6fa91c-92ad-4b0e-8606-5bcb9f8d851e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\libdpp-10.0.35-win64\bin\libssl-1_1-x64.dll">
+      <Filter>dll\dpp\debug</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\libdpp-10.0.35-win64\bin\opus.dll">
+      <Filter>dll\dpp\debug</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\libdpp-10.0.35-win64\bin\zlib1.dll">
+      <Filter>dll\dpp\debug</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\libdpp-10.0.35-win64\bin\libcrypto-1_1-x64.dll">
+      <Filter>dll\dpp\debug</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\libdpp-10.0.35-win64\bin\dpp.dll">
+      <Filter>dll\dpp\debug</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\release\libdpp-10.0.35-win64\bin\dpp.dll">
+      <Filter>dll\dpp\release</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\release\libdpp-10.0.35-win64\bin\libcrypto-1_1-x64.dll">
+      <Filter>dll\dpp\release</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\release\libdpp-10.0.35-win64\bin\libssl-1_1-x64.dll">
+      <Filter>dll\dpp\release</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\release\libdpp-10.0.35-win64\bin\opus.dll">
+      <Filter>dll\dpp\release</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\release\libdpp-10.0.35-win64\bin\zlib1.dll">
+      <Filter>dll\dpp\release</Filter>
+    </CopyFileToFolders>
   </ItemGroup>
 </Project>

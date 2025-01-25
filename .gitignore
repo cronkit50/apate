@@ -2,9 +2,13 @@
 vs2022/.vs/*
 vs2022/intermediate/*
 
-# Executables
+# Runtime
 *.exe
+*.dll
 
 # symbol files
 *.pdb
 
+# extracted dpp dependencies
+
+thirdparty/dpp/win64/*
