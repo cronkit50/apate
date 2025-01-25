@@ -11,6 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\cfg\cfgFile.cpp" />
+    <ClCompile Include="..\src\cfg\util.cpp" />
     <ClCompile Include="..\src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -87,6 +89,12 @@
       <DestinationFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       </DestinationFileName>
     </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\cfg\cfg.hpp" />
+    <ClInclude Include="..\src\cfg\cfgFile.hpp" />
+    <ClInclude Include="..\src\cfg\util.hpp" />
+    <ClInclude Include="..\src\common\common.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
