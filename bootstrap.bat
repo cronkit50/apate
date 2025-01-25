@@ -16,9 +16,14 @@ rem DPP TARGET FILE POINTERS
 set DPP_CURRENT_DEBUG_ZIP=%DPP_ROOT%%DPP_10_0_3_5_WIN64_DEBUG%
 set DPP_CURRENT_RELEASE_ZIP=%DPP_ROOT%%DPP_10_0_3_5_WIN64_RELEASE%
 
+if not exist %DPP_WIN64_DEBUG_OUT_DIR%\NUL (mkdir %DPP_WIN64_DEBUG_OUT_DIR%)
+if not exist %DPP_WIN64_RELEASE_OUT_DIR%)\NUL (mkdir %DPP_WIN64_RELEASE_OUT_DIR%)
+
 rem unzip the files from dpp's releases
 echo Unpacking %DPP_CURRENT_DEBUG_ZIP% to %DPP_WIN64_DEBUG_OUT_DIR%...
 powershell.exe -nologo -noprofile -command "& { $shell = New-Object -COM Shell.Application; $target = $shell.NameSpace('%DPP_WIN64_DEBUG_OUT_DIR%'); $zip = $shell.NameSpace('%DPP_CURRENT_DEBUG_ZIP%'); $target.CopyHere($zip.Items(), 16); }"
 
 echo Unpacking %DPP_CURRENT_RELEASE_ZIP% to %DPP_WIN64_RELEASE_OUT_DIR%...
 powershell.exe -nologo -noprofile -command "& { $shell = New-Object -COM Shell.Application; $target = $shell.NameSpace('%DPP_WIN64_RELEASE_OUT_DIR%'); $zip = $shell.NameSpace('%DPP_CURRENT_RELEASE_ZIP%'); $target.CopyHere($zip.Items(), 16); }"
+
+pause
