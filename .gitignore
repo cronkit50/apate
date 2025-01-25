@@ -1,0 +1,9 @@
+#VS intermediate files
+vs2022/.vs/*
+vs2022/intermediate/*
+
+# Executables
+*.exe
+
+# symbol files
+*.pdb
