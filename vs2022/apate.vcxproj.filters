@@ -25,16 +25,34 @@
     <Filter Include="dll\dpp\release">
       <UniqueIdentifier>{bd6fa91c-92ad-4b0e-8606-5bcb9f8d851e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\cfg">
+      <UniqueIdentifier>{375c9f49-a02c-4a2f-b951-e55b53912a18}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\common">
+      <UniqueIdentifier>{9a02d8c3-ade6-47e6-bacf-da25c0b8d810}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\cfg">
+      <UniqueIdentifier>{461e7945-f1d1-4f74-a926-b265d83d7868}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\common">
+      <UniqueIdentifier>{0b92bd2b-3ba3-4e6f-9677-de4486d72098}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\log">
+      <UniqueIdentifier>{7f5116ae-50d0-4e15-b5da-15b6496a6c6c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\log">
+      <UniqueIdentifier>{db52195a-a01e-4913-a3b0-2c378995e25c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\cfg\cfgFile.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\cfg\util.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\cfg\cfgFile.cpp">
+      <Filter>Source Files\cfg</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -70,14 +88,17 @@
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\cfg\cfg.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\cfg\cfgFile.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\cfg\util.hpp">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\cfg\cfg.hpp">
+      <Filter>Header Files\cfg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\cfg\cfgFile.hpp">
+      <Filter>Header Files\cfg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\common\common.hpp">
+      <Filter>Header Files\common</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
