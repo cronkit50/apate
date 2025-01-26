@@ -15,7 +15,8 @@ int main(int argc, char* argv[]) {
     CfgFile cfg;
     std::string cfgPath = exePath;
     cfgPath = cfgPath.substr(0, cfgPath.find_last_of('\\')) + "\\..\\ENV.cfg";
-    cfg.Read(cfgPath);
+    cfg.ReadCfg(cfgPath);
+
 
     dpp::cluster bot ("future token");
 

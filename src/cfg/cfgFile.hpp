@@ -1,30 +1,33 @@
 #ifndef CFGFILE_HPP
 #define CFGFILE_HPP
 
-#include <sstream>
 #include <string>
+#include <string_view>
 #include <map>
-#include <variant>
-
-typedef std::variant<std::string, int> CfgValueVariant;
-
-struct CfgItem {
-    std::string key;
-    CfgValueVariant value;
-};
+ 
+typedef std::string CfgKey;
+typedef std::string CfgVal;
 
 class CfgFile {
 public:
-    CfgFile() = default;
+    void ReadCfg(const std::string_view pathToCfg);
+    std::string ConfigFilePath() const;
 
-    void Read(const std::string_view& pathToCfg);
+    template<typename T>
+    T ReadPpty(const std::string_view key);
+
+    // only support these for now.
+    template<> int         ReadPpty<int>        (const std::string_view key);
+    template<> std::string ReadPpty<std::string>(const std::string_view key);
 
     ~CfgFile() = default;
 private:
 
-    void Parse(std::stringstream& buffer);
+    void ParseCfgLines(const std::string &buffer);
 
-    std::map<std::string, CfgItem> m_cfg;
+
+    std::map<CfgKey, CfgVal> m_cfg;
+    std::string m_configFilePath;
 };
 
 #endif
