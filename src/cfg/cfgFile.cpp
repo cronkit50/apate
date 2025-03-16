@@ -1,6 +1,6 @@
 #include "cfgFile.hpp"
 
-#include "util.hpp"
+#include "common/util.hpp"
 
 #include <filesystem>
 #include <exception>

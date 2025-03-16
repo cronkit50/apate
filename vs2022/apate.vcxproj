@@ -11,8 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\apate.cpp" />
     <ClCompile Include="..\src\cfg\cfgFile.cpp" />
-    <ClCompile Include="..\src\cfg\util.cpp" />
+    <ClCompile Include="..\src\common\util.cpp" />
     <ClCompile Include="..\src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -91,10 +92,11 @@
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\apate.hpp" />
     <ClInclude Include="..\src\cfg\cfg.hpp" />
     <ClInclude Include="..\src\cfg\cfgFile.hpp" />
-    <ClInclude Include="..\src\cfg\util.hpp" />
     <ClInclude Include="..\src\common\common.hpp" />
+    <ClInclude Include="..\src\common\util.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -144,7 +146,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\thirdparty\dpp\win64\debug\libdpp-10.0.35-win64\include\dpp-10.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\thirdparty\dpp\win64\debug\libdpp-10.0.35-win64\include\dpp-10.0;$(SolutionDir)..\src\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

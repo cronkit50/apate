@@ -48,11 +48,14 @@
     <ClCompile Include="..\src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\cfg\util.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\cfg\cfgFile.cpp">
       <Filter>Source Files\cfg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\apate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\common\util.cpp">
+      <Filter>Source Files\common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -88,9 +91,6 @@
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\cfg\util.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\cfg\cfg.hpp">
       <Filter>Header Files\cfg</Filter>
     </ClInclude>
@@ -98,6 +98,12 @@
       <Filter>Header Files\cfg</Filter>
     </ClInclude>
     <ClInclude Include="..\src\common\common.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\apate.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\common\util.hpp">
       <Filter>Header Files\common</Filter>
     </ClInclude>
   </ItemGroup>
