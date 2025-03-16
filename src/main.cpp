@@ -1,5 +1,4 @@
 // DPP extraneous warnings
-#pragma warning( disable : 4251 )
 
 #include "cfg/cfgFile.hpp"
 #include "common/common.hpp"
@@ -18,7 +17,7 @@ int main(int argc, char* argv[]) {
     cfg.ReadCfg(cfgPath);
 
 
-    dpp::cluster bot ("future token");
+    
 
     std::cout << "Hello World!";
 }

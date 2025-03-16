@@ -15,6 +15,7 @@
     <ClCompile Include="..\src\cfg\cfgFile.cpp" />
     <ClCompile Include="..\src\common\util.cpp" />
     <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\openai.cpp" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\libdpp-10.0.35-win64\bin\dpp.dll">
@@ -97,6 +98,7 @@
     <ClInclude Include="..\src\cfg\cfgFile.hpp" />
     <ClInclude Include="..\src\common\common.hpp" />
     <ClInclude Include="..\src\common\util.hpp" />
+    <ClInclude Include="..\src\openai.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -147,6 +149,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)..\thirdparty\dpp\win64\debug\libdpp-10.0.35-win64\include\dpp-10.0;$(SolutionDir)..\src\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4251</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -164,6 +167,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)..\thirdparty\dpp\win64\release\libdpp-10.0.35-win64\include\dpp-10.0;</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4251</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
