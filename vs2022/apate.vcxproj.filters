@@ -43,6 +43,9 @@
     <Filter Include="Header Files\log">
       <UniqueIdentifier>{db52195a-a01e-4913-a3b0-2c378995e25c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="dll\curl">
+      <UniqueIdentifier>{fe22589b-b8ec-4979-aa66-476ebe1a1b32}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\main.cpp">
@@ -91,6 +94,9 @@
     </CopyFileToFolders>
     <CopyFileToFolders Include="..\thirdparty\dpp\win64\release\libdpp-10.0.35-win64\bin\zlib1.dll">
       <Filter>dll\dpp\release</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\curl\win64\bin\libcurl.dll">
+      <Filter>dll\curl</Filter>
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>

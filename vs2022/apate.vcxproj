@@ -100,6 +100,11 @@
     <ClInclude Include="..\src\common\util.hpp" />
     <ClInclude Include="..\src\openai.hpp" />
   </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="..\thirdparty\curl\win64\bin\libcurl.dll">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -148,7 +153,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\thirdparty\dpp\win64\debug\libdpp-10.0.35-win64\include\dpp-10.0;$(SolutionDir)..\src\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\thirdparty\dpp\win64\release\libdpp-10.0.35-win64\include\dpp-10.0;$(SolutionDir)..\submodules\json\include\;$(SolutionDir)..\submodules\curl\include\;$(SolutionDir)..\src</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4251</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -166,7 +171,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\thirdparty\dpp\win64\release\libdpp-10.0.35-win64\include\dpp-10.0;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\thirdparty\dpp\win64\release\libdpp-10.0.35-win64\include\dpp-10.0;$(SolutionDir)..\submodules\json\include\;$(SolutionDir)..\submodules\curl\include\;$(SolutionDir)..\src</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4251</DisableSpecificWarnings>
     </ClCompile>
     <Link>

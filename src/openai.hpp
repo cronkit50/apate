@@ -1,11 +1,12 @@
 #ifndef OPENAI_HPP
 #define OPENAI_HPP
 
-#include <dpp/dpp.h>
+#include <curl/curl.h>
 
 class openai
 {
 public:
+	openai(void);
 private:
 };
 

@@ -1,0 +1,11 @@
+{
+  "name": "apate",
+  "version": "0.0",
+  "dependencies": [
+    {
+      "name": "curl",
+      "version>=": "8.12.1"
+    }
+  ],
+  "builtin-baseline": "fce5c633c8beb6e57b5d5f2476b037b798fe13f1"
+}

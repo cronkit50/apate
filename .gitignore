@@ -10,5 +10,11 @@ vs2022/intermediate/*
 *.pdb
 
 # extracted dpp dependencies
-
 thirdparty/dpp/win64/*
+
+# extracted curl depedencies
+thirdparty/curl/win64/*
+
+#vcpkg
+vcpkg_installed
+vcpkg
