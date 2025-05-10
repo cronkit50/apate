@@ -1,10 +1,5 @@
 #include "discordbot.hpp"
 
-
-#include <string>
-#include <string_view>
-#include <mutex>
-
 namespace discord
 {
 discordBot::discordBot(const std::string& discordAPIToken)
@@ -12,10 +7,18 @@ discordBot::discordBot(const std::string& discordAPIToken)
       m_cluster(discordAPIToken, dpp::i_default_intents | dpp::i_message_content)
 {
     auto botHandle = [this]() {
-        this->m_cluster.start(dpp::st_wait);
+        try
+        {
+            this->m_cluster.start(dpp::st_return);
+            m_botStartedOK = true;
+        }
+        catch (...)
+        {
+            m_botStartedOK = false;
+        }
 
         // wake up anyone waiting
-        m_botThreadWaitFlag = false;
+        m_botThreadWaitFlag = true;
         m_botThreadWaitCV.notify_all();
         };
 
@@ -23,11 +26,15 @@ discordBot::discordBot(const std::string& discordAPIToken)
 }
 discordBot::~discordBot(){
     m_cluster.shutdown();
-    m_botThread.join();
+
+    if (m_botThread.joinable()){
+        m_botThread.join();
+    }
 }
 
-void discordBot::Wait(){
+bool discordBot::WaitForStart(){
     std::unique_lock lock(m_botThreadWaitMtx);
     m_botThreadWaitCV.wait(lock, [&]()->bool{return (m_botThreadWaitFlag);});
+    return m_botStartedOK;
 }
 }

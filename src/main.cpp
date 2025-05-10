@@ -17,6 +17,6 @@ int main(int argc, char* argv[]) {
     cfg.ReadCfgFile(cfgPath);
 
     discord::discordBot discordBot(cfg.ReadPpty<std::string>("DISCORD_BOT_KEY"));
-    discordBot.Wait();
+    discordBot.WaitForStart();
 
 }

@@ -14,8 +14,13 @@ class discordBot
 {
 public:
     discordBot(const std::string& discordAPIToken);
+    discordBot(const discordBot&)            = delete;
+    discordBot& operator=(const discordBot&) = delete;
+    discordBot(discordBot&&)                 = delete;
+    discordBot& operator=(discordBot&&)      = delete;
+
     ~discordBot();
-    void Wait();
+    bool WaitForStart();
 
 private:
     std::string  m_api;
@@ -23,6 +28,7 @@ private:
 
     std::thread  m_botThread;
 
+    std::atomic<bool>       m_botStartedOK      = false;
     std::atomic<bool>       m_botThreadWaitFlag = false;
     std::mutex              m_botThreadWaitMtx;
     std::condition_variable m_botThreadWaitCV;
