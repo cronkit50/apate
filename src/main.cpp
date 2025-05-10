@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
     cfgPath = cfgPath.substr(0, cfgPath.find_last_of('\\')) + "\\..\\ENV.cfg";
     cfg.ReadCfgFile(cfgPath);
 
-    discord::ChatGptAgent(cfg.ReadPpty<std::string>("DISCORD_BOT_KEY"));
+    discord::discordBot discordBot(cfg.ReadPpty<std::string>("DISCORD_BOT_KEY"));
+    discordBot.Wait();
 
-    std::cout << "Hello World!";
 }
