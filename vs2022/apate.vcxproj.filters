@@ -5,14 +5,6 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
-    </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
     <Filter Include="dll">
       <UniqueIdentifier>{9ff7756d-839d-4360-a4b9-e4d20a2d9cc1}</UniqueIdentifier>
     </Filter>
@@ -25,12 +17,6 @@
     <Filter Include="dll\dpp\release">
       <UniqueIdentifier>{bd6fa91c-92ad-4b0e-8606-5bcb9f8d851e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\cfg">
-      <UniqueIdentifier>{375c9f49-a02c-4a2f-b951-e55b53912a18}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\common">
-      <UniqueIdentifier>{9a02d8c3-ade6-47e6-bacf-da25c0b8d810}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\cfg">
       <UniqueIdentifier>{461e7945-f1d1-4f74-a926-b265d83d7868}</UniqueIdentifier>
     </Filter>
@@ -40,11 +26,27 @@
     <Filter Include="Source Files\log">
       <UniqueIdentifier>{7f5116ae-50d0-4e15-b5da-15b6496a6c6c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="dll\curl">
+      <UniqueIdentifier>{fe22589b-b8ec-4979-aa66-476ebe1a1b32}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Header Files\cfg">
+      <UniqueIdentifier>{375c9f49-a02c-4a2f-b951-e55b53912a18}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\common">
+      <UniqueIdentifier>{9a02d8c3-ade6-47e6-bacf-da25c0b8d810}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Header Files\log">
       <UniqueIdentifier>{db52195a-a01e-4913-a3b0-2c378995e25c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="dll\curl">
-      <UniqueIdentifier>{fe22589b-b8ec-4979-aa66-476ebe1a1b32}</UniqueIdentifier>
+    <Filter Include="Header Files\discord">
+      <UniqueIdentifier>{1fd02595-cb27-42b9-8947-ee994001e728}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\discord">
+      <UniqueIdentifier>{1b0c45ce-d72b-4798-a97b-f75c649f7bcd}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -60,8 +62,11 @@
     <ClCompile Include="..\src\common\util.cpp">
       <Filter>Source Files\common</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\openai.cpp">
+    <ClCompile Include="..\src\chatgpt.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\discord\discordbot.cpp">
+      <Filter>Source Files\discord</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -115,8 +120,11 @@
     <ClInclude Include="..\src\common\util.hpp">
       <Filter>Header Files\common</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\openai.hpp">
+    <ClInclude Include="..\src\chatgpt.hpp">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\discord\discordbot.hpp">
+      <Filter>Header Files\discord</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

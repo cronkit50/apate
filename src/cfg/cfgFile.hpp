@@ -4,13 +4,13 @@
 #include <string>
 #include <string_view>
 #include <map>
- 
+
 typedef std::string CfgKey;
 typedef std::string CfgVal;
 
 class CfgFile {
 public:
-    void ReadCfg(const std::string_view pathToCfg);
+    void ReadCfgFile(const std::string_view pathToCfg);
     std::string ConfigFilePath() const;
 
     template<typename T>

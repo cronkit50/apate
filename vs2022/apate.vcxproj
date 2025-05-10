@@ -14,8 +14,9 @@
     <ClCompile Include="..\src\apate.cpp" />
     <ClCompile Include="..\src\cfg\cfgFile.cpp" />
     <ClCompile Include="..\src\common\util.cpp" />
+    <ClCompile Include="..\src\discord\discordbot.cpp" />
     <ClCompile Include="..\src\main.cpp" />
-    <ClCompile Include="..\src\openai.cpp" />
+    <ClCompile Include="..\src\chatgpt.cpp" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\libdpp-10.0.35-win64\bin\dpp.dll">
@@ -98,7 +99,8 @@
     <ClInclude Include="..\src\cfg\cfgFile.hpp" />
     <ClInclude Include="..\src\common\common.hpp" />
     <ClInclude Include="..\src\common\util.hpp" />
-    <ClInclude Include="..\src\openai.hpp" />
+    <ClInclude Include="..\src\chatgpt.hpp" />
+    <ClInclude Include="..\src\discord\discordbot.hpp" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="..\thirdparty\curl\win64\bin\libcurl.dll">
