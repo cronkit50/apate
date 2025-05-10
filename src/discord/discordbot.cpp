@@ -58,6 +58,7 @@ void discordBot::HandleOnReady(const dpp::ready_t& event){
 
 
 void discordBot::HandleMessageEvent(const dpp::message_create_t& event){
+    std::lock_guard lock(m_eventCallbackMtx);
     m_persistence.RecordMessageEvent(event);
 }
 

@@ -39,6 +39,8 @@ private:
     std::mutex              m_botThreadWaitMtx;
     std::condition_variable m_botThreadWaitCV;
 
+    std::mutex              m_eventCallbackMtx;
+
     serverPersistence       m_persistence;
 };
 }

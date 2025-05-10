@@ -48,12 +48,15 @@ serverPersistence::serverPersistence(){
     SetBaseDirectory(GetDirectory(DIRECTORY_EXE).string());
 }
 
+serverPersistence::~serverPersistence(){
+    CloseOpenHandles();
+}
+
 serverPersistence::serverPersistence(serverPersistence&& rhs) noexcept{
     m_baseDir = std::move(rhs.m_baseDir);
 
-    // close all open file handles automatically
-    m_channelLogs.clear();
-    m_channelLogs = std::move(rhs.m_channelLogs);
+    CloseOpenHandles();
+    m_channelLogFiles = std::move(rhs.m_channelLogFiles);
 
 }
 
@@ -70,24 +73,49 @@ void serverPersistence::SetBaseDirectory(const std::filesystem::path& dir){
     m_baseDir = dir;
     m_baseDir.remove_filename();
 }
+void serverPersistence::SetLocalMessageCacheLimit(const size_t numMessages){
+    m_localMessageCacheMax = numMessages;
+}
 void serverPersistence::RecordMessageEvent(const dpp::message_create_t& event){
     channelRecordFile* fileOpen = nullptr;
 
-    try{
-        fileOpen = &GetChannelFile(event);
-    } catch(...){
-        // don't record, the file might not have been opened correctly
-        throw;
+    auto &messageCache = m_messagesByChannel[event.msg.channel_id];
+    messageRecord messageRecord(event);
+
+    if (messageCache.size() >= m_localMessageCacheMax) {
+
+        // reuse the front (oldest) entry and move it to the end.
+        (*messageCache.begin()) = messageRecord;
+        messageCache.splice(messageCache.end(), messageCache, messageCache.begin());
+
+    }
+    else{
+        messageCache.push_back(messageRecord);
     }
 
-    messageRecord record(event);
-    record.Serialize (fileOpen->oStream);
+    fileOpen = &GetChannelFile(event);
+    messageRecord.Serialize (fileOpen->oStream);
     fileOpen->oStream.flush ();
 }
 
-void serverPersistence::swap(serverPersistence& rhs){
+serverPersistence& serverPersistence::swap(serverPersistence& rhs){
     std::swap(m_baseDir, rhs.m_baseDir);
-    std::swap(m_channelLogs, rhs.m_channelLogs);
+    std::swap(m_channelLogFiles, rhs.m_channelLogFiles);
+
+    return *this;
+}
+
+void serverPersistence::CloseOpenHandles(){
+    for (auto &[_, logFile] : m_channelLogFiles){
+        try{
+            if(logFile.oStream.is_open()){
+                logFile.oStream.close();
+            }
+        }
+        catch(...){
+            // don't emit exception for this
+        }
+    }
 }
 
 channelRecordFile& serverPersistence::GetChannelFile(const dpp::message_create_t& event){
@@ -99,7 +127,7 @@ channelRecordFile& serverPersistence::GetChannelFile(const dpp::message_create_t
     std::filesystem::path logDir (m_baseDir);
     logDir.append(event.msg.guild_id.str());
 
-    if(m_channelLogs.count(channel_id)<=0){
+    if(m_channelLogFiles.count(channel_id)<=0){
         try{
             channelRecordFile newFile;
 
@@ -110,7 +138,7 @@ channelRecordFile& serverPersistence::GetChannelFile(const dpp::message_create_t
             newFile.oStream.exceptions(std::ios_base::failbit | std::ios_base::badbit);
             newFile.oStream.open(newFile.pathToFile,std::ios::app);
 
-            auto [it, _] = m_channelLogs.insert(std::pair{ channel_id, std::move(newFile) });
+            auto [it, _] = m_channelLogFiles.insert(std::pair{ channel_id, std::move(newFile) });
 
             recordFile = &it->second;
         } catch(...){
@@ -119,7 +147,7 @@ channelRecordFile& serverPersistence::GetChannelFile(const dpp::message_create_t
     }
     else{
         // check if the file still exists
-        recordFile = &m_channelLogs.at(channel_id);
+        recordFile = &m_channelLogFiles.at(channel_id);
 
         if(false == recordFile->oStream.is_open()){
             std::filesystem::create_directories(logDir);

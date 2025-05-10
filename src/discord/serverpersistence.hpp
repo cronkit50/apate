@@ -8,6 +8,7 @@
 #include <map>
 #include <string>
 #include <string_view>
+#include <list>
 
 namespace discord
 {
@@ -36,24 +37,31 @@ struct messageRecord{
 class serverPersistence{
 public:
     serverPersistence();
-    ~serverPersistence() = default;
+    ~serverPersistence();
 
     serverPersistence(serverPersistence &rhs) = delete;
     serverPersistence(serverPersistence &&rhs) noexcept;
     serverPersistence& operator=(serverPersistence &&rhs) noexcept;
 
     void SetBaseDirectory(const std::filesystem::path &dir);
+    void SetLocalMessageCacheLimit(const size_t numMessages);
+
     void RecordMessageEvent(const dpp::message_create_t& event);
 
-    void swap(serverPersistence& rhs);
+    serverPersistence& swap(serverPersistence& rhs);
 
 private:
+
+    void CloseOpenHandles();
     channelRecordFile &GetChannelFile(const dpp::message_create_t& event);
 
     std::filesystem::path m_baseDir;
 
+    size_t m_localMessageCacheMax = 200;
+
     // by channel id
-    std::map<dpp::snowflake, channelRecordFile> m_channelLogs;
+    std::map<dpp::snowflake, channelRecordFile> m_channelLogFiles;
+    std::map<dpp::snowflake, std::list<messageRecord>> m_messagesByChannel;
 };
 }
 
