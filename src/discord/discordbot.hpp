@@ -1,6 +1,8 @@
 #ifndef DISCORDBOT_HPP
 #define DISCORDBOT_HPP
 
+#include <discord/serverpersistence.hpp>
+
 #include <dpp/cluster.h>
 
 #include <atomic>
@@ -19,19 +21,25 @@ public:
     discordBot(discordBot&&)                 = delete;
     discordBot& operator=(discordBot&&)      = delete;
 
+    void Start(void);
+
     ~discordBot();
     bool WaitForStart();
+    void SetPersistence(discord::serverPersistence &&persistence);
 
 private:
+    void HandleOnReady(const dpp::ready_t& event);
+    void HandleMessageEvent(const dpp::message_create_t &event);
+
     std::string  m_api;
     dpp::cluster m_cluster;
-
-    std::thread  m_botThread;
 
     std::atomic<bool>       m_botStartedOK      = false;
     std::atomic<bool>       m_botThreadWaitFlag = false;
     std::mutex              m_botThreadWaitMtx;
     std::condition_variable m_botThreadWaitCV;
+
+    serverPersistence       m_persistence;
 };
 }
 

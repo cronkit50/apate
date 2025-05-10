@@ -5,6 +5,7 @@ vs2022/intermediate/*
 # Runtime
 *.exe
 *.dll
+*.log
 
 # symbol files
 *.pdb

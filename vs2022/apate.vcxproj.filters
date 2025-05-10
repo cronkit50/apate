@@ -68,6 +68,9 @@
     <ClCompile Include="..\src\discord\discordbot.cpp">
       <Filter>Source Files\discord</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\discord\serverpersistence.cpp">
+      <Filter>Source Files\discord</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\libdpp-10.0.35-win64\bin\libssl-1_1-x64.dll">
@@ -124,6 +127,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\discord\discordbot.hpp">
+      <Filter>Header Files\discord</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\discord\serverpersistence.hpp">
       <Filter>Header Files\discord</Filter>
     </ClInclude>
   </ItemGroup>

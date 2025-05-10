@@ -19,6 +19,7 @@
 #define CFG_FILE_LINE_DELIM          "\n"
 #define CFG_FILE_KEY_VALUE_SEPARATOR "="
 
+
 static std::string ConfigPostProcessing(const std::string_view str){
     // Windows environment variables can be letters, numbers and underscores
     static const std::regex envVariableRgx("%[\\w_]+%");
@@ -40,6 +41,7 @@ static std::string ConfigPostProcessing(const std::string_view str){
 
 }
 
+
 static bool ShouldIgnoreCfgLine(const std::string_view& str){
     std::string_view stripped = StripSpaces(str);
 
@@ -49,8 +51,7 @@ static bool ShouldIgnoreCfgLine(const std::string_view& str){
         // whitespace line
         ignoreLine = true;
     }
-    else if (stripped.size() >= 2 && stripped.substr(0,2) == "//")
-    {
+    else if (stripped.size() >= 2 && stripped.substr(0,2) == "//") {
         // comment
         ignoreLine = true;
     }
@@ -58,8 +59,7 @@ static bool ShouldIgnoreCfgLine(const std::string_view& str){
     return ignoreLine;
 }
 
-static std::pair<CfgKey, CfgVal> ParseCfgSingleLine(const std::string_view& cfgLine)
-{
+static std::pair<CfgKey, CfgVal> ParseCfgSingleLine(const std::string_view& cfgLine){
     // Raw regex: ^\s*(.+?)\s*=\s*(.+)\s*$
     // C++-ified: ^\\s*(.+?)\\s*=\\s*(.+)\\s*$
 

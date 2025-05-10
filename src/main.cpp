@@ -1,5 +1,6 @@
 #include "cfg/cfgFile.hpp"
 #include "common/common.hpp"
+#include "common/util.hpp"
 #include "chatgpt.hpp"
 #include "discord/discordbot.hpp"
 
@@ -7,16 +8,16 @@
 #include <filesystem>
 
 int main(int argc, char* argv[]) {
-
-    char exePath[MAX_BUFF_SIZE] = "";
-    GetModuleFileNameA(NULL, exePath, sizeof(exePath));
-
     CfgFile cfg;
-    std::string cfgPath = exePath;
-    cfgPath = cfgPath.substr(0, cfgPath.find_last_of('\\')) + "\\..\\ENV.cfg";
-    cfg.ReadCfgFile(cfgPath);
+    cfg.ReadCfgFile(GetDirectory(DIRECTORY_CFG, "ENV.cfg").string());
+
+    discord::serverPersistence persistence;
+    persistence.SetBaseDirectory(GetDirectory(DIRECTORY_PERSISTENCE));
 
     discord::discordBot discordBot(cfg.ReadPpty<std::string>("DISCORD_BOT_KEY"));
+    discordBot.SetPersistence(std::move(persistence));
+    discordBot.Start();
     discordBot.WaitForStart();
 
+    std::promise<void>().get_future().wait();
 }

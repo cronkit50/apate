@@ -15,6 +15,7 @@
     <ClCompile Include="..\src\cfg\cfgFile.cpp" />
     <ClCompile Include="..\src\common\util.cpp" />
     <ClCompile Include="..\src\discord\discordbot.cpp" />
+    <ClCompile Include="..\src\discord\serverpersistence.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\chatgpt.cpp" />
   </ItemGroup>
@@ -101,6 +102,7 @@
     <ClInclude Include="..\src\common\util.hpp" />
     <ClInclude Include="..\src\chatgpt.hpp" />
     <ClInclude Include="..\src\discord\discordbot.hpp" />
+    <ClInclude Include="..\src\discord\serverpersistence.hpp" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="..\thirdparty\curl\win64\bin\libcurl.dll">
