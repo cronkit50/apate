@@ -8,6 +8,9 @@
 #include <filesystem>
 
 int main(int argc, char* argv[]) {
+
+    curl_global_init (CURL_GLOBAL_DEFAULT);
+
     CfgFile cfg;
     cfg.ReadCfgFile(GetDirectory(DIRECTORY_CFG, "ENV.cfg").string());
 

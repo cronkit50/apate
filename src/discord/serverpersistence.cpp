@@ -142,6 +142,9 @@ channelRecordFile& serverPersistence::GetChannelFile(const dpp::message_create_t
 
             recordFile = &it->second;
         } catch(...){
+
+            // to do
+
             throw;
         }
     }
