@@ -7,6 +7,10 @@
 
 #include <format>
 
+
+namespace openai
+{
+
 static const char *openAI_API_URL = "https://api.openai.com/v1/responses";
 
 
@@ -17,48 +21,74 @@ static size_t CurlWriteToString(void* contents, size_t size, size_t nmemb, std::
 }
 
 
-static openai::OutputItemType ChatGPTMessageTypeStrToType(const std::string_view &view){
-    static const std::map<std::string, openai::OutputItemType> dict{
-        { "message"         , openai::OUTPUT_MESSAGE },
-        { "file_search_call", openai::OUTPUT_FILE_SEARCH },
-        { "function_call"   , openai::OUTPUT_FUNCTION_TOOL },
-        { "web_search_call" , openai::OUTPUT_WEB_SEARCH },
-        { "reasoning"       , openai::OUTPUT_REASONING },
-    };
-
-    if (view.empty()){
-        throw std::runtime_error("Empty string");
+static OutputItemType ChatGPTMessageTypeStrToType(const std::string_view &typeStr){
+    if(typeStr=="message"){
+        return OutputItemType::OUTPUT_MESSAGE;
     }
 
-    return dict.at(ToLowercase(view));
+    if(typeStr=="file_search_call"){
+        return OutputItemType::OUTPUT_FILE_SEARCH;
+    }
+
+    if(typeStr=="function_call"){
+        return OutputItemType::OUTPUT_FUNCTION_TOOL;
+    }
+
+    if(typeStr=="web_search_call"){
+        return OutputItemType::OUTPUT_WEB_SEARCH;
+    }
+
+    if(typeStr=="reasoning"){
+        return OutputItemType::OUTPUT_REASONING;
+    }
+
+    return OutputItemType::OUTPUT_UNKNOWN;
 }
 
 static openai::chatGPTOutputItem OutputItemFromJson(const nlohmann::json &outputBlock){
 
     openai::chatGPTOutputItem item;
+
+    if (!outputBlock.contains("type")) {
+        APATE_LOG_WARN_AND_THROW(std::invalid_argument,"Missing 'type' in output block");
+    }
+
     item.outputType = ChatGPTMessageTypeStrToType(outputBlock["type"]);
 
     switch(item.outputType){
-        case openai::OUTPUT_MESSAGE:
+        case OutputItemType::OUTPUT_MESSAGE:
         {
             openai::chatGPTOutputMessage message;
 
-            message.id = outputBlock["id"];
+            if (outputBlock.contains("content") && outputBlock["content"].is_array() && !outputBlock["content"].empty()){
+                const auto& contentArray = outputBlock["content"];
+                const auto& content0     = outputBlock["content"][0];
+                if (contentArray.size() > 1){
+                    // the API spec says only one item is inside at a time.
+                    APATE_LOG_DEBUG("Unexpected: content array has more than one object inside");
+                }
 
-            if (outputBlock["content"][0].count ("refusal") > 0){
-                message.message = outputBlock["content"][0]["refusal"];
-                message.refused = true;
+                if(content0.contains("refusal")){
+                    message.message = content0["refusal"];
+                    message.refused = true;
+                }
+                else if (content0.contains("text")){
+                    message.message = content0["text"];
+                }
+                else{
+                    APATE_LOG_WARN_AND_THROW(std::runtime_error, "Message content missing 'refusal' or 'text'");
+                }
             }
-            else{
-                message.message = outputBlock["content"][0]["text"];
-                // to do citations
+            else {
+                APATE_LOG_WARN_AND_THROW(std::runtime_error, "Json content block is invalid");
             }
 
             item.content = message;
             break;
         }
-        case openai::OUTPUT_REASONING:
+        case OutputItemType::OUTPUT_REASONING:
         {
+            // TO DO
             openai::chatGPTOutputReasoning reasoning;
             reasoning.id = outputBlock["id"];
             reasoning.summary = outputBlock["summary"]["text"];
@@ -68,19 +98,13 @@ static openai::chatGPTOutputItem OutputItemFromJson(const nlohmann::json &output
         }
         default:
         {
-            // to do
-            std::string msg = std::format("unimplemented chatgpt response type: {}", std::string (outputBlock["type"]));
-            throw std::runtime_error (msg);
-
+            APATE_LOG_WARN_AND_THROW(std::runtime_error, "unimplemented response type: {}", std::string (outputBlock["type"]));
             break;
         }
     }
     return item;
 }
 
-
-namespace openai
-{
 nlohmann::json chatGPTPrompt::JsonRequest(void) const{
     nlohmann::json json;
     json["model"] = model.modelValue;
@@ -102,61 +126,70 @@ nlohmann::json chatGPTPrompt::JsonRequest(void) const{
 
 
 void chatGPTResponse::Put(const nlohmann::json& json){
-    if(json.count("id") > 0){
+    if(json.empty()){
+        APATE_LOG_WARN_AND_THROW(std::runtime_error, "Empty json object");
+    }
+
+    if(!json.contains("id")){
+        APATE_LOG_DEBUG("Id missing from json object");
+    }
+    else{
         id = json["id"];
     }
 
-    if(json.count("status") > 0){
+    if(!json.contains("status")){
+        APATE_LOG_DEBUG("status missing from json object");
+    }
+    else{
         status = json["status"];
     }
 
-    if(json.count("created_at") > 0){
+    if(json.contains("created_at")){
         createdAt = json["created_at"];
     }
 
-    if(json.count("error") > 0){
+    if(json.contains("error")){
         std::string errorCode;
         std::string errorReason;
 
-        try{
-            errorCode   = json["error"]["code"];
+        if(json["error"].contains("code")){
+            errorCode = json["error"]["code"];
         }
-        catch (...){
-            // failed...
+
+        if(json["error"].contains("reason")){
+            errorReason = json["error"]["reason"];
         }
-        try{
-            errorReason  = json["error"]["reason"];
-        }
-        catch (...){
-            // failed...
-        }
+
         if (!errorCode.empty() || !errorReason.empty()){
             responseFailureReason = std::format("ERROR CODE {} - {}",
                                                 errorCode.empty() ? "NONE" : errorCode,
                                                 errorReason);
-
-            responseOK = false;
         }
-
-
     }
 
     responseOK = (status == "completed" && responseFailureReason.empty());
 
     if(!json.count("output")){
-        // no output objects
+        APATE_LOG_WARN("json object has no output objects");
+        return;
     }
-    else{
-        auto &jsonOutputs = json["output"];
-        for(size_t ii = 0; ii < jsonOutputs.size(); ii++){
-            try{
-                chatGPTOutputItem item = OutputItemFromJson(jsonOutputs[ii]);
-                outputs.push_back(std::move(item));
-            }
-            catch (...){
-                // throw away this output
-            }
+
+    auto &jsonOutputs = json["output"];
+    for (const auto& outputBlock : jsonOutputs) {
+        try{
+            chatGPTOutputItem item = OutputItemFromJson(outputBlock);
+            outputs.push_back(std::move(item));
         }
+        catch (const std::exception &e){
+            APATE_LOG_WARN ("Output block could not be parsed. - '{}'. Dump: \n{}",
+                            e.what(),
+                            jsonOutputs.dump());
+        }
+        catch (...){
+            APATE_LOG_WARN ("Output block could not be parsed. Unknown exception. Dump: \n{}",
+                            jsonOutputs.dump());
+        }
+
     }
 }
 

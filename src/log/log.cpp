@@ -18,10 +18,12 @@ std::string logMessage::FormattedMessage() const{
     std::stringstream threadID_SS;
     threadID_SS << threadID;
 
-    std::string formatted = std::format("[{}] {}.{:03} (T{}) {}",
+    std::string formatted = std::format("[{}] {}.{:03} {:<15} {:<5} (T{}) {}",
                                         LogSeverityString(severity),
                                         timePart,
                                         milliseconds,
+                                        fileName,
+                                        lineNumber,
                                         threadID_SS.str(),
                                         message);
     return formatted;
@@ -46,7 +48,7 @@ void Logger::AddCallback(const logCallback& cb){
     std::lock_guard lock (m_callbacksMtx);
 
     if(!cb){
-        APATE_LOG_DOMAIN("callback was null");
+        APATE_LOG_DEBUG("callback was null");
     }
     else{
         m_callbacks.push_back(cb);

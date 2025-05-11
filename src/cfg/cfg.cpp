@@ -21,7 +21,7 @@ std::shared_ptr<CfgFile> CfgGetFile(const cfg_file fileType){
         }
         default:
         {
-            APATE_LOG_DOMAIN_AND_THROW(std::runtime_error, "FileType: {} unsupported", fileType);
+            APATE_LOG_DEBUG_AND_THROW(std::runtime_error, "FileType: {} unsupported", fileType);
             break;
         }
     }

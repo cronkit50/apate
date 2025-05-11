@@ -4,6 +4,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <chrono>
+#include <filesystem>
 #include <format>
 #include <functional>
 #include <iostream>
@@ -31,7 +32,8 @@ typedef std::chrono::time_point<std::chrono::system_clock,
 struct logMessage{
     log_severity severity   = LOG_SEVERITY_INFO;
     size_t       lineNumber = 0;
-    std::string  file;
+    std::string  filePath;
+    std::string  fileName;
     std::string  message;
     logTimestamp timeStamp;
     std::thread::id threadID;
@@ -43,7 +45,7 @@ struct logMessage{
 typedef std::function<void(const logMessage&, const std::string&)> logCallback;
 
 #define APATE_LOG_INFO(format, ...) LogMessage(__FILE__, __LINE__, LOG_SEVERITY_INFO, format, __VA_ARGS__);
-#define APATE_LOG_DOMAIN(format, ...) LogMessage(__FILE__, __LINE__, LOG_SEVERITY_DOMAIN, format, __VA_ARGS__);
+#define APATE_LOG_DEBUG(format, ...) LogMessage(__FILE__, __LINE__, LOG_SEVERITY_DOMAIN, format, __VA_ARGS__);
 #define APATE_LOG_WARN(format, ...) LogMessage(__FILE__, __LINE__, LOG_SEVERITY_WARN, format, __VA_ARGS__);
 #define APATE_LOG_SEVERE(format, ...) LogMessage(__FILE__, __LINE__, LOG_SEVERITY_SEVERE, format, __VA_ARGS__);
 
@@ -51,7 +53,7 @@ typedef std::function<void(const logMessage&, const std::string&)> logCallback;
 #define APATE_LOG_INFO_AND_RETHROW(_e) do { APATE_LOG_INFO(_e.what()) \
                                             throw; } while(0);
 
-#define APATE_LOG_DEBUG_AND_RETHROW(_e) do { APATE_LOG_DOMAIN(_e.what()) \
+#define APATE_LOG_DEBUG_AND_RETHROW(_e) do { APATE_LOG_DEBUG(_e.what()) \
                                             throw; } while(0);
 
 #define APATE_LOG_WARN_AND_RETHROW(_e) do { APATE_LOG_WARN(_e.what()) \
@@ -66,7 +68,7 @@ typedef std::function<void(const logMessage&, const std::string&)> logCallback;
                                                                           throw _exceptionType(_formatted); } while(0);
 
 #define APATE_LOG_INFO_AND_THROW(_exceptionType, _format, ...) APATE_LOG_AND_THROW(_exceptionType, _format, LOG_SEVERITY_INFO, __VA_ARGS__);
-#define APATE_LOG_DOMAIN_AND_THROW(_exceptionType, _format, ...) APATE_LOG_AND_THROW(_exceptionType, _format, LOG_SEVERITY_DOMAIN, __VA_ARGS__);
+#define APATE_LOG_DEBUG_AND_THROW(_exceptionType, _format, ...) APATE_LOG_AND_THROW(_exceptionType, _format, LOG_SEVERITY_DOMAIN, __VA_ARGS__);
 #define APATE_LOG_WARN_AND_THROW(_exceptionType, _format, ...) APATE_LOG_AND_THROW(_exceptionType, _format, LOG_SEVERITY_WARN, __VA_ARGS__);
 #define APATE_LOG_SEVERE_AND_THROW(_exceptionType, _format, ...) APATE_LOG_AND_THROW(_exceptionType, _format, LOG_SEVERITY_SEVERE, __VA_ARGS__);
 
@@ -112,7 +114,8 @@ void LogMessage(const char* file, size_t line, const log_severity severity, std:
     }
 
     logMessage log;
-    log.file = file;
+    log.filePath = file;
+    log.fileName = std::filesystem::path(file).filename().string();
     log.lineNumber = line;
     log.severity = severity;
     log.timeStamp = std::chrono::system_clock::now();
