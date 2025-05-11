@@ -1,5 +1,7 @@
 #include "discordbot.hpp"
 
+#include "log/log.hpp"
+
 const char *askChatGptCommand = "askchatgpt";
 
 namespace discord
@@ -83,15 +85,22 @@ void discordBot::HandleOnSlashCommand(const dpp::slashcommand_t& event){
             std::string chatGPTQuery = event.command.usr.username + " asks: " + query;
             event.reply(chatGPTQuery);
 
-            std::async([this,prompt,event](void){
-                std::future<openai::chatGPTResponse> future = m_chatGPT->AskChatGPTAsync(prompt);
+            std::thread async([this,prompt,event](void){
+                try{
 
-                openai::chatGPTResponse response = future.get();
-                if (response.responseOK){
-                    dpp::message msg(event.command.channel_id, std::get<openai::chatGPTOutputMessage> (response.outputs[0].content).message);
-                    m_cluster.message_create(msg);
+                    std::future<openai::chatGPTResponse> future = m_chatGPT->AskChatGPTAsync(prompt);
+
+                    openai::chatGPTResponse response = future.get();
+                    if(response.responseOK){
+                        dpp::message msg(event.command.channel_id, std::get<openai::chatGPTOutputMessage>(response.outputs[0].content).message);
+                        m_cluster.message_create(msg);
+                    }
+                } catch (const std::exception &e){
+                    APATE_LOG_INFO_AND_RETHROW (e);
                 }
-                });
+             });
+
+            async.detach();
         }
     }
 }

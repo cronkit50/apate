@@ -88,11 +88,14 @@ static openai::chatGPTOutputItem OutputItemFromJson(const nlohmann::json &output
         }
         case OutputItemType::OUTPUT_REASONING:
         {
-            // TO DO
             openai::chatGPTOutputReasoning reasoning;
-            reasoning.id = outputBlock["id"];
-            reasoning.summary = outputBlock["summary"]["text"];
+            reasoning.id = outputBlock.value("id", "");
 
+            if(outputBlock.contains("summary") && outputBlock["summary"].array() && !outputBlock["summary"].empty()){
+                if (outputBlock["summary"].contains("text")){
+                    reasoning.summary = outputBlock["summary"]["text"];
+                }
+            }
             item.content = reasoning;
             break;
         }
@@ -181,12 +184,12 @@ void chatGPTResponse::Put(const nlohmann::json& json){
             outputs.push_back(std::move(item));
         }
         catch (const std::exception &e){
-            APATE_LOG_WARN ("Output block could not be parsed. - '{}'. Dump: \n{}",
+            APATE_LOG_WARN ("Output block could not be parsed. - '{}'. Dump: \n\n{}",
                             e.what(),
                             jsonOutputs.dump());
         }
         catch (...){
-            APATE_LOG_WARN ("Output block could not be parsed. Unknown exception. Dump: \n{}",
+            APATE_LOG_WARN ("Output block could not be parsed. Unknown exception. Dump: \n\n{}",
                             jsonOutputs.dump());
         }
 
@@ -213,11 +216,11 @@ chatGPT::~chatGPT(){
 }
 
 std::future<chatGPTResponse> chatGPT::AskChatGPTAsync(const chatGPTPrompt& prompt){
-    std::lock_guard lock(m_dispatchQMtx);
-
     chatGPTDispatchRequest toDispatch;
     toDispatch.json    = prompt.JsonRequest();
     auto future        = toDispatch.promise.get_future();
+
+    std::lock_guard lock(m_dispatchQMtx);
 
     m_dispatchQ.push(std::move(toDispatch));
     m_dispatchQCV.notify_all();
@@ -225,14 +228,12 @@ std::future<chatGPTResponse> chatGPT::AskChatGPTAsync(const chatGPTPrompt& promp
     return future;
 }
 void chatGPT::HandleQueue(void){
-    std::unique_lock lock(m_dispatchQMtx);
-
     while(true){
+        std::unique_lock lock(m_dispatchQMtx);
         m_dispatchQCV.wait(lock, [&](){return (m_shutDown || !m_dispatchQ.empty());});
 
         if (m_shutDown){
-            // clear out the queue and send any threads waiting on a promise
-            // a status code.
+            // clear out the queue and send a status code any threads waiting on a promise
 
             while(!m_dispatchQ.empty()){
                 chatGPTDispatchRequest request (std::move (m_dispatchQ.front()));
@@ -246,11 +247,10 @@ void chatGPT::HandleQueue(void){
             return;
         }
 
-        // handle normally
+        // copy the data to avoid starving callers while we process
         chatGPTDispatchRequest request (std::move (m_dispatchQ.front()));
         m_dispatchQ.pop();
         lock.unlock();
-
 
         struct curl_slist* headers = NULL;
         headers = curl_slist_append(headers, "Content-Type: application/json");
@@ -274,8 +274,8 @@ void chatGPT::HandleQueue(void){
 
         }
         else{
-            nlohmann::json jsonResponse = nlohmann::json::parse(curlResponse);
             try{
+                nlohmann::json jsonResponse = nlohmann::json::parse(curlResponse);
                 chatGPTResponse.Put(jsonResponse);
             }
             catch (...){
