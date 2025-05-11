@@ -1,5 +1,7 @@
 #include "chatgpt.hpp"
 
+#include "log/log.hpp"
+
 #include <nlohmann/json.hpp>
 
 #include <format>
@@ -16,11 +18,11 @@ static size_t CurlWriteToString(void* contents, size_t size, size_t nmemb, std::
 
 static openai::OutputItemType ChatGPTMessageTypeStrToType(const std::string_view &view){
     static const std::map<std::string, openai::OutputItemType> dict{
-        { "message", openai::OUTPUT_MESSAGE },
+        { "message"         , openai::OUTPUT_MESSAGE },
         { "file_search_call", openai::OUTPUT_FILE_SEARCH },
-        { "function_call", openai::OUTPUT_FUNCTION_TOOL },
-        { "web_search_call", openai::OUTPUT_WEB_SEARCH },
-        { "reasoning", openai::OUTPUT_REASONING },
+        { "function_call"   , openai::OUTPUT_FUNCTION_TOOL },
+        { "web_search_call" , openai::OUTPUT_WEB_SEARCH },
+        { "reasoning"       , openai::OUTPUT_REASONING },
     };
 
     if (view.empty()){
