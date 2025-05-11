@@ -3,6 +3,7 @@
 #include "common/util.hpp"
 #include "chatgpt.hpp"
 #include "discord/discordbot.hpp"
+#include "log/log.hpp"
 
 #include <iostream>
 #include <filesystem>
@@ -11,6 +12,9 @@ int main(int argc, char* argv[]) {
 
     curl_global_init (CURL_GLOBAL_DEFAULT);
 
+    AddOnLog([](const logMessage& _, const std::string& formatted){ std::cout << formatted << '\n';});
+
+    APATE_LOG_INFO("Starting Apate...");
 
     CfgFile cfg;
     cfg.ReadCfgFile(GetDirectory(DIRECTORY_CFG, "ENV.cfg").string());
@@ -24,6 +28,8 @@ int main(int argc, char* argv[]) {
     discordBot.SetChatGPT(chatGPT);
     discordBot.Start();
     discordBot.WaitForStart();
+
+    APATE_LOG_INFO("Discord Bot started...");
 
     std::promise<void>().get_future().wait();
 }
