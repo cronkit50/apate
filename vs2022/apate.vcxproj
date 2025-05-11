@@ -12,7 +12,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\apate.cpp" />
+    <ClCompile Include="..\src\cfg\cfg.cpp" />
     <ClCompile Include="..\src\cfg\cfgFile.cpp" />
+    <ClCompile Include="..\src\common\lrucache.cpp" />
     <ClCompile Include="..\src\common\util.cpp" />
     <ClCompile Include="..\src\discord\discordbot.cpp" />
     <ClCompile Include="..\src\discord\serverpersistence.cpp" />
@@ -100,6 +102,7 @@
     <ClInclude Include="..\src\cfg\cfg.hpp" />
     <ClInclude Include="..\src\cfg\cfgFile.hpp" />
     <ClInclude Include="..\src\common\common.hpp" />
+    <ClInclude Include="..\src\common\lrucache.hpp" />
     <ClInclude Include="..\src\common\util.hpp" />
     <ClInclude Include="..\src\chatgpt.hpp" />
     <ClInclude Include="..\src\discord\discordbot.hpp" />

@@ -74,6 +74,12 @@
     <ClCompile Include="..\src\log\log.cpp">
       <Filter>Source Files\log</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\cfg\cfg.cpp">
+      <Filter>Source Files\cfg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\common\lrucache.cpp">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\libdpp-10.0.35-win64\bin\libssl-1_1-x64.dll">
@@ -137,6 +143,9 @@
     </ClInclude>
     <ClInclude Include="..\src\log\log.hpp">
       <Filter>Header Files\log</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\common\lrucache.hpp">
+      <Filter>Header Files\common</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
