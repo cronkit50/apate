@@ -1,16 +1,20 @@
 #include "discordbot.hpp"
 
+const char *askChatGptCommand = "askchatgpt";
+
 namespace discord
 {
 discordBot::discordBot(const std::string& discordAPIToken)
     : m_api (discordAPIToken),
       m_cluster(discordAPIToken, dpp::i_default_intents | dpp::i_message_content)
 {
-    auto messageCreateHandler = std::bind(&discordBot::HandleMessageEvent, this, std::placeholders::_1);
-    auto readyHandler         = std::bind(&discordBot::HandleOnReady,      this, std::placeholders::_1);
+    auto messageCreateHandler = std::bind(&discordBot::HandleMessageEvent,   this, std::placeholders::_1);
+    auto readyHandler         = std::bind(&discordBot::HandleOnReady,        this, std::placeholders::_1);
+    auto commandHandler       = std::bind(&discordBot::HandleOnSlashCommand, this, std::placeholders::_1);
 
     m_cluster.on_message_create(messageCreateHandler);
     m_cluster.on_ready(readyHandler);
+    m_cluster.on_slashcommand(commandHandler);
 }
 
 
@@ -54,11 +58,51 @@ void discordBot::SetChatGPT(openai::chatGPT* chatGPT){
         return;
     }
 
+    if (m_chatGPT){
+        delete m_chatGPT;
+    }
+
     m_chatGPT = chatGPT;
 }
 
 
+void discordBot::HandleOnSlashCommand(const dpp::slashcommand_t& event){
+
+    const dpp::interaction &command = event.command;
+
+    if(command.get_command_name () == askChatGptCommand){
+        std::string query = std::get<std::string>(event.get_parameter("query"));
+
+
+        if(m_chatGPT){
+            openai::chatGPTPrompt prompt;
+            prompt.systemPrompt = "You are a helpful AI, but be brief in your answers.";
+            prompt.request = query;
+            prompt.model.modelValue   = "o4-mini-2025-04-16";
+
+            std::string chatGPTQuery = event.command.usr.username + " asks: " + query;
+            event.reply(chatGPTQuery);
+
+            std::async([this,prompt,event](void){
+                std::future<openai::chatGPTResponse> future = m_chatGPT->AskChatGPTAsync(prompt);
+
+                openai::chatGPTResponse response = future.get();
+                if (response.responseOK){
+                    dpp::message msg(event.command.channel_id, std::get<openai::chatGPTOutputMessage> (response.outputs[0].content).message);
+                    m_cluster.message_create(msg);
+                }
+                });
+        }
+    }
+}
+
 void discordBot::HandleOnReady(const dpp::ready_t& event){
+    // register our commands
+    dpp::slashcommand askChatGPT(askChatGptCommand, "wastes Rocket50's money to ask chatGPT a question", m_cluster.me.id);
+    askChatGPT.add_option (dpp::command_option{ dpp::co_string, "query",  "ask i guess", true });
+    m_cluster.global_bulk_command_create({ askChatGPT });
+
+
     m_botStartedOK      = true;
     m_botThreadWaitFlag = true;
     m_botThreadWaitCV.notify_all();

@@ -28,23 +28,26 @@ static openai::OutputItemType ChatGPTMessageTypeStrToType(const std::string_view
     }
 
     std::string lowerCase;
-    std::transform(view.begin(), view.end(), lowerCase.begin(),
+    std::transform(view.begin(), view.end(), std::back_inserter(lowerCase),
                    [](unsigned char c){ return std::tolower(c); });
 
     return dict.at(lowerCase);
 }
 
 static openai::chatGPTOutputItem OutputItemFromJson(const nlohmann::json &outputBlock){
-    openai::chatGPTOutputItem item;
 
+    openai::chatGPTOutputItem item;
     item.outputType = ChatGPTMessageTypeStrToType(outputBlock["type"]);
 
     switch(item.outputType){
         case openai::OUTPUT_MESSAGE:
         {
             openai::chatGPTOutputMessage message;
+
+            message.id = outputBlock["id"];
+
             if (outputBlock["content"][0].count ("refusal") > 0){
-                message.message = outputBlock["content"]["refusal"];
+                message.message = outputBlock["content"][0]["refusal"];
                 message.refused = true;
             }
             else{
@@ -53,6 +56,15 @@ static openai::chatGPTOutputItem OutputItemFromJson(const nlohmann::json &output
             }
 
             item.content = message;
+            break;
+        }
+        case openai::OUTPUT_REASONING:
+        {
+            openai::chatGPTOutputReasoning reasoning;
+            reasoning.id = outputBlock["id"];
+            reasoning.summary = outputBlock["summary"]["text"];
+
+            item.content = reasoning;
             break;
         }
         default:
@@ -99,35 +111,47 @@ void chatGPTResponse::Put(const nlohmann::json& json){
         status = json["status"];
     }
 
+    if(json.count("created_at") > 0){
+        createdAt = json["created_at"];
+    }
+
     if(json.count("error") > 0){
         std::string errorCode;
         std::string errorReason;
 
         try{
             errorCode   = json["error"]["code"];
-            errorReason = json["error"]["message"];
         }
         catch (...){
             // failed...
         }
+        try{
+            errorReason  = json["error"]["reason"];
+        }
+        catch (...){
+            // failed...
+        }
+        if (!errorCode.empty() || !errorReason.empty()){
+            responseFailureReason = std::format("ERROR CODE {} - {}",
+                                                errorCode.empty() ? "NONE" : errorCode,
+                                                errorReason);
 
-        responseFailureReason = std::format("ERROR CODE {} - {}",
-                                             errorCode.empty() ? "NONE" : errorCode,
-                                             errorReason);
+            responseOK = false;
+        }
+
+
     }
 
     responseOK = (status == "completed" && responseFailureReason.empty());
 
-    if(json.count("output") == 0){
+    if(!json.count("output")){
         // no output objects
-
     }
     else{
         auto &jsonOutputs = json["output"];
-
-        for(const auto &output : jsonOutputs){
+        for(size_t ii = 0; ii < jsonOutputs.size(); ii++){
             try{
-                chatGPTOutputItem item = OutputItemFromJson(output);
+                chatGPTOutputItem item = OutputItemFromJson(jsonOutputs[ii]);
                 outputs.push_back(std::move(item));
             }
             catch (...){
@@ -139,8 +163,6 @@ void chatGPTResponse::Put(const nlohmann::json& json){
 
 chatGPT::chatGPT(const std::string_view& openAIKey) : m_openAI_Key(openAIKey){
     m_curl = curl_easy_init();
-
-
     m_dispatcher = std::thread(&chatGPT::HandleQueue, this);
 }
 chatGPT::~chatGPT(){
@@ -217,15 +239,22 @@ void chatGPT::HandleQueue(void){
         if((chatGPTResponse.HTTPCode = curl_easy_perform(m_curl)) != CURLE_OK){
             // nothing to do. Just return the error code.
             request.promise.set_value(std::move(chatGPTResponse));
-            continue;
+
         }
+        else{
+            nlohmann::json jsonResponse = nlohmann::json::parse(curlResponse);
+            try{
+                chatGPTResponse.Put(jsonResponse);
+            }
+            catch (...){
+                chatGPTResponse.responseOK = false;
+            }
 
-        nlohmann::json jsonResponse = nlohmann::json::parse(curlResponse);
-        chatGPTResponse.Put(jsonResponse);
-        request.promise.set_value(std::move(chatGPTResponse));
+            request.promise.set_value(std::move(chatGPTResponse));
 
-        if (NULL != headers){
-            curl_slist_free_all (headers);
+            if (NULL != headers){
+                curl_slist_free_all (headers);
+            }
         }
     }
 }

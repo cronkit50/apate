@@ -64,8 +64,15 @@ struct chatGPTOutputMessage{
 
 };
 
+struct chatGPTOutputReasoning{
+    std::string id;
+    std::string summary;
 
-typedef std::variant<chatGPTOutputMessage> chatGptOutputVariant;
+};
+
+
+typedef std::variant<chatGPTOutputMessage,
+                     chatGPTOutputReasoning> chatGptOutputVariant;
 
 struct chatGPTOutputItem{
     OutputItemType       outputType;
@@ -79,6 +86,7 @@ struct chatGPTResponse{
     std::string status;
     std::string responseFailureReason;
 
+    int createdAt;
     std::string id;
     std::vector<chatGPTOutputItem> outputs;
 

@@ -34,6 +34,7 @@ public:
     void SetChatGPT(openai::chatGPT *chatGPT);
 
 private:
+    void HandleOnSlashCommand(const dpp::slashcommand_t& event);
     void HandleOnReady(const dpp::ready_t& event);
     void HandleMessageEvent(const dpp::message_create_t &event);
 
