@@ -1,4 +1,4 @@
-#include "cfg/cfgFile.hpp"
+#include "cfg/cfg.hpp"
 #include "common/common.hpp"
 #include "common/util.hpp"
 #include "chatgpt.hpp"
@@ -16,14 +16,12 @@ int main(int argc, char* argv[]) {
 
     APATE_LOG_INFO("Starting Apate...");
 
-    CfgFile cfg;
-    cfg.ReadCfgFile(GetDirectory(DIRECTORY_CFG, "ENV.cfg").string());
-
-    openai::chatGPT* chatGPT = new openai::chatGPT(cfg.ReadPpty<std::string>("OPEN_API_KEY"));
+    auto cfg = CfgGetFile(CFG_FILE_ENV);
+    openai::chatGPT* chatGPT = new openai::chatGPT(cfg->ReadPpty<std::string>("OPEN_API_KEY"));
     discord::serverPersistence persistence;
     persistence.SetBaseDirectory(GetDirectory(DIRECTORY_PERSISTENCE));
 
-    discord::discordBot discordBot(cfg.ReadPpty<std::string>("DISCORD_BOT_KEY"));
+    discord::discordBot discordBot(cfg->ReadPpty<std::string>("DISCORD_BOT_KEY"));
     discordBot.SetPersistence(std::move(persistence));
     discordBot.SetChatGPT(chatGPT);
     discordBot.Start();

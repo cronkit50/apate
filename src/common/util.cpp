@@ -115,3 +115,13 @@ std::string ReplaceSubstring(const std::string_view& original, const std::string
 
     return replaced;
 }
+
+std::string ToLowercase(const std::string_view& view){
+    std::string lowerCase;
+    lowerCase.reserve(view.length());
+
+    std::transform(view.begin(), view.end(), std::back_inserter(lowerCase),
+                   [](unsigned char c){ return std::tolower(c); });
+
+    return lowerCase;
+}

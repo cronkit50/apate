@@ -1,5 +1,6 @@
 #include "cfgFile.hpp"
 
+#include "log/log.hpp"
 #include "common/common.hpp"
 #include "common/util.hpp"
 
@@ -70,10 +71,7 @@ static std::pair<CfgKey, CfgVal> ParseCfgSingleLine(const std::string_view& cfgL
     std::smatch matches;
 
     if (!std::regex_search(stripped, matches, rgx)){
-        std::string msg = std::vformat("Config val '{}' has invalid format",
-                                        std::make_format_args(cfgLine));
-
-        throw std::runtime_error(msg);
+        APATE_LOG_WARN_AND_THROW(std::runtime_error, "Config val '{}' has invalid format", cfgLine);
     }
 
     return std::make_pair(matches[1], ConfigPostProcessing(matches[2].str ()));
@@ -83,18 +81,13 @@ void CfgFile::ReadCfgFile(const std::string_view pathToCfg){
     std::fstream inputStream;
 
     if (!std::filesystem::exists(pathToCfg)){
-        std::string msg = std::vformat("Cannot find config file '{}'",
-                                        std::make_format_args(pathToCfg));
+        APATE_LOG_WARN_AND_THROW(std::invalid_argument, "Cannot find config file '{}'", pathToCfg);
 
-        throw std::invalid_argument(msg);
     }
 
     inputStream.open(pathToCfg, std::ios_base::in);
     if (!inputStream.is_open()){
-        std::string msg = std::vformat("Failed to open config file '{}'",
-                                        std::make_format_args(pathToCfg));
-
-        throw std::runtime_error(msg);
+        APATE_LOG_WARN_AND_THROW(std::invalid_argument, "Failed to open config file '{}'", pathToCfg);
     }
 
     m_cfg.clear();
@@ -123,7 +116,7 @@ void CfgFile::ParseCfgLines(const std::string& buffer){
             m_cfg.insert(ParseCfgSingleLine(line));
         }
         catch (...){
-            // keep going even if one line failed
+            APATE_LOG_WARN("Config line: {} failed to parse", line);
         }
     }
 }
@@ -135,19 +128,14 @@ int CfgFile::ReadPpty<int>(const std::string_view key) {
 
     int parsed = 0;
     if (m_cfg.count(keyBuff) <= 0) {
-        std::string msg = std::vformat("Key: {} doesn't exist",
-                                        std::make_format_args(keyBuff));
-
-        throw std::runtime_error(msg);
+        APATE_LOG_WARN_AND_THROW(std::runtime_error, "Key: {} doesn't exist", keyBuff);
     }
 
     try {
         parsed = std::stoi(m_cfg.at(keyBuff));
     }
     catch (const std::exception &){
-        std::string msg = std::vformat("Key = {}, Value = {} failed to parse as int",
-                                        std::make_format_args (key, m_cfg.at(keyBuff)));
-        throw std::runtime_error(msg);
+        APATE_LOG_WARN_AND_THROW(std::runtime_error, "Key = {}, Value = {} failed to parse as int", key, m_cfg.at(keyBuff));
     }
     return parsed;
 }
@@ -157,8 +145,7 @@ std::string CfgFile::ReadPpty<std::string>(const std::string_view key){
     const std::string keyBuff(key);
 
     if(m_cfg.count(keyBuff) <= 0){
-        std::string msg = "No such key '" + keyBuff + "' in " + ConfigFilePath();
-        throw std::runtime_error(msg);
+        APATE_LOG_WARN_AND_THROW(std::runtime_error, "No such key {}", keyBuff);
     }
 
     return m_cfg.at(keyBuff);

@@ -36,4 +36,6 @@ std::string ReplaceSubstring(const std::string_view& original,
                              const std::string_view& find,
                              const std::string_view& replace);
 
+std::string ToLowercase (const std::string_view &view);
+
 #endif

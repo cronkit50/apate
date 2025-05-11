@@ -1,5 +1,6 @@
 #include "chatgpt.hpp"
 
+#include "common/util.hpp"
 #include "log/log.hpp"
 
 #include <nlohmann/json.hpp>
@@ -29,11 +30,7 @@ static openai::OutputItemType ChatGPTMessageTypeStrToType(const std::string_view
         throw std::runtime_error("Empty string");
     }
 
-    std::string lowerCase;
-    std::transform(view.begin(), view.end(), std::back_inserter(lowerCase),
-                   [](unsigned char c){ return std::tolower(c); });
-
-    return dict.at(lowerCase);
+    return dict.at(ToLowercase(view));
 }
 
 static openai::chatGPTOutputItem OutputItemFromJson(const nlohmann::json &outputBlock){

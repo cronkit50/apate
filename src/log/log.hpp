@@ -42,11 +42,33 @@ struct logMessage{
 
 typedef std::function<void(const logMessage&, const std::string&)> logCallback;
 
+#define APATE_LOG_INFO(format, ...) LogMessage(__FILE__, __LINE__, LOG_SEVERITY_INFO, format, __VA_ARGS__);
+#define APATE_LOG_DOMAIN(format, ...) LogMessage(__FILE__, __LINE__, LOG_SEVERITY_DOMAIN, format, __VA_ARGS__);
+#define APATE_LOG_WARN(format, ...) LogMessage(__FILE__, __LINE__, LOG_SEVERITY_WARN, format, __VA_ARGS__);
+#define APATE_LOG_SEVERE(format, ...) LogMessage(__FILE__, __LINE__, LOG_SEVERITY_SEVERE, format, __VA_ARGS__);
 
-#define APATE_LOG_INFO(format, ...) LogMessage(__FILE__, __LINE__, LOG_SEVERITY_INFO, format, ##__VA_ARGS__);
-#define APATE_LOG_DOMAIN(format, ...) LogMessage(__FILE__, __LINE__, LOG_SEVERITY_DOMAIN, format, ##__VA_ARGS__);
-#define APATE_LOG_WARN(format, ...) LogMessage(__FILE__, __LINE__, LOG_SEVERITY_WARN, format, ##__VA_ARGS__);
-#define APATE_LOG_SEVERE(format, ...) LogMessage(__FILE__, __LINE__, LOG_SEVERITY_SEVERE, format, ##__VA_ARGS__);
+
+#define APATE_LOG_INFO_AND_RETHROW(_e) do { APATE_LOG_INFO(_e.what()) \
+                                            throw; } while(0);
+
+#define APATE_LOG_DEBUG_AND_RETHROW(_e) do { APATE_LOG_DOMAIN(_e.what()) \
+                                            throw; } while(0);
+
+#define APATE_LOG_WARN_AND_RETHROW(_e) do { APATE_LOG_WARN(_e.what()) \
+                                            throw; } while(0);
+
+#define APATE_LOG_SEVERE_AND_RETHROW(_e) do { APATE_LOG_SEVERE(_e.what()) \
+                                            throw; } while(0);
+
+
+#define APATE_LOG_AND_THROW(_exceptionType, _format, _severity, ...) do { std::string _formatted = std::format(_format, __VA_ARGS__); \
+                                                                          LogMessage(__FILE__, __LINE__, _severity, _formatted);      \
+                                                                          throw _exceptionType(_formatted); } while(0);
+
+#define APATE_LOG_INFO_AND_THROW(_exceptionType, _format, ...) APATE_LOG_AND_THROW(_exceptionType, _format, LOG_SEVERITY_INFO, __VA_ARGS__);
+#define APATE_LOG_DOMAIN_AND_THROW(_exceptionType, _format, ...) APATE_LOG_AND_THROW(_exceptionType, _format, LOG_SEVERITY_DOMAIN, __VA_ARGS__);
+#define APATE_LOG_WARN_AND_THROW(_exceptionType, _format, ...) APATE_LOG_AND_THROW(_exceptionType, _format, LOG_SEVERITY_WARN, __VA_ARGS__);
+#define APATE_LOG_SEVERE_AND_THROW(_exceptionType, _format, ...) APATE_LOG_AND_THROW(_exceptionType, _format, LOG_SEVERITY_SEVERE, __VA_ARGS__);
 
 class Logger{
 public:
@@ -82,15 +104,10 @@ private:
     std::mutex  m_callbacksMtx;
     std::vector<logCallback> m_callbacks;
 };
-
 template <typename... Args>
-void LogMessage(const char* file, size_t line, const log_severity severity, const char *fmt, Args&&... args){
+void LogMessage(const char* file, size_t line, const log_severity severity, std::string_view fmt, Args&&... args){
     if(!file){
         std::cerr << "File was null";
-        return;
-    }
-    if(!fmt){
-        std::cerr << "Format was null. Called by " << file << " line " << line;
         return;
     }
 
@@ -103,18 +120,16 @@ void LogMessage(const char* file, size_t line, const log_severity severity, cons
 
     try{
         log.message = std::vformat(fmt, std::make_format_args(args...));
-    }
-    catch (const std::exception &e){
+    } catch (const std::exception &e){
         // format seems to failed. maybe the caller didn't give enough arguments?
         log.message = std::format("Logging failed for format: '{}' - {}. Number of arguments provided: {}",
-                                  fmt,
-                                  e.what(),
-                                  sizeof...(args));
+                                    fmt,
+                                    e.what(),
+                                    sizeof...(args));
     }
-
     Logger::GetInstance().AddLog(log);
 
-    }
+}
 
 const char *LogSeverityString(const log_severity severity);
 
