@@ -23,7 +23,7 @@ public:
         bool found = false;
 
         auto it = m_cacheIndex.find(key);
-        if (it == m_cacheIndex.end()){
+        if (it != m_cacheIndex.end()){
             // cache hit, move to the beginning
             m_cacheQueue.splice(m_cacheQueue.begin(), m_cacheQueue, it->second);
 
