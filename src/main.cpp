@@ -11,8 +11,16 @@ int main(int argc, char* argv[]) {
 
     curl_global_init (CURL_GLOBAL_DEFAULT);
 
+
     CfgFile cfg;
     cfg.ReadCfgFile(GetDirectory(DIRECTORY_CFG, "ENV.cfg").string());
+
+    openai::chatGPT* chatGPT = new openai::chatGPT(cfg.ReadPpty<std::string>("OPEN_API_KEY"));
+    openai::chatGPTPrompt chatGPTPrompt;
+    chatGPTPrompt.model.modelValue = cfg.ReadPpty<std::string>("OPEN_AI_MODEL");
+    chatGPTPrompt.request = "Please say one word. Any word.";
+
+    auto future = chatGPT->AskChatGPTAsync(chatGPTPrompt);
 
     discord::serverPersistence persistence;
     persistence.SetBaseDirectory(GetDirectory(DIRECTORY_PERSISTENCE));

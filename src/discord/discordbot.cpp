@@ -49,6 +49,14 @@ void discordBot::SetPersistence(discord::serverPersistence&& persistence){
     m_persistence = std::forward<discord::serverPersistence>(persistence);
 }
 
+void discordBot::SetChatGPT(openai::chatGPT* chatGPT){
+    if (!chatGPT){
+        return;
+    }
+
+    m_chatGPT = chatGPT;
+}
+
 
 void discordBot::HandleOnReady(const dpp::ready_t& event){
     m_botStartedOK      = true;

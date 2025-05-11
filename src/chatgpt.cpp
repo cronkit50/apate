@@ -2,7 +2,10 @@
 
 #include <nlohmann/json.hpp>
 
-static const char *openAI_API_URL = "https://api.openai.com/v1/chat/completions";
+#include <format>
+
+static const char *openAI_API_URL = "https://api.openai.com/v1/responses";
+
 
 static size_t CurlWriteToString(void* contents, size_t size, size_t nmemb, std::string* response) {
     const size_t totalSize = size * nmemb;
@@ -10,30 +13,135 @@ static size_t CurlWriteToString(void* contents, size_t size, size_t nmemb, std::
     return totalSize;
 }
 
+
+static openai::OutputItemType ChatGPTMessageTypeStrToType(const std::string_view &view){
+    static const std::map<std::string, openai::OutputItemType> dict{
+        { "message", openai::OUTPUT_MESSAGE },
+        { "file_search_call", openai::OUTPUT_FILE_SEARCH },
+        { "function_call", openai::OUTPUT_FUNCTION_TOOL },
+        { "web_search_call", openai::OUTPUT_WEB_SEARCH },
+        { "reasoning", openai::OUTPUT_REASONING },
+    };
+
+    if (view.empty()){
+        throw std::runtime_error("Empty string");
+    }
+
+    std::string lowerCase;
+    std::transform(view.begin(), view.end(), lowerCase.begin(),
+                   [](unsigned char c){ return std::tolower(c); });
+
+    return dict.at(lowerCase);
+}
+
+static openai::chatGPTOutputItem OutputItemFromJson(const nlohmann::json &outputBlock){
+    openai::chatGPTOutputItem item;
+
+    item.outputType = ChatGPTMessageTypeStrToType(outputBlock["type"]);
+
+    switch(item.outputType){
+        case openai::OUTPUT_MESSAGE:
+        {
+            openai::chatGPTOutputMessage message;
+            if (outputBlock["content"][0].count ("refusal") > 0){
+                message.message = outputBlock["content"]["refusal"];
+                message.refused = true;
+            }
+            else{
+                message.message = outputBlock["content"][0]["text"];
+                // to do citations
+            }
+
+            item.content = message;
+            break;
+        }
+        default:
+        {
+            // to do
+            std::string msg = std::format("unimplemented chatgpt response type: {}", std::string (outputBlock["type"]));
+            throw std::runtime_error (msg);
+
+            break;
+        }
+    }
+    return item;
+}
+
+
 namespace openai
 {
 nlohmann::json chatGPTPrompt::JsonRequest(void) const{
     nlohmann::json json;
     json["model"] = model.modelValue;
-    json["messages"][0]["role"] = "system";
-    json["messages"][0]["content"] = systemPrompt;
+    json["instructions"] = systemPrompt;
 
     for (size_t ii = 0; ii < history.size(); ii++){
 
         const auto &msg = history[ii];
-        json["messages"][ii + 1]["role"] = (ROLE_USER == msg.role) ? "user" : "assistant";
-        json["messages"][ii + 1]["content"] = msg.message;
+        json["input"][ii + 1]["role"] = (ROLE_USER == msg.role) ? "user" : "assistant";
+        json["input"][ii + 1]["content"] = msg.message;
     }
 
-    size_t lastMessage = json["messages"].size();
-    json["messages"][lastMessage]["role"]    = "user";
-    json["messages"][lastMessage]["content"] = request;
+    size_t lastMessage = json["input"].size();
+    json["input"][lastMessage]["role"]    = "user";
+    json["input"][lastMessage]["content"] = request;
 
     return json;
 }
 
+
+void chatGPTResponse::Put(const nlohmann::json& json){
+    if(json.count("id") > 0){
+        id = json["id"];
+    }
+
+    if(json.count("status") > 0){
+        status = json["status"];
+    }
+
+    if(json.count("error") > 0){
+        std::string errorCode;
+        std::string errorReason;
+
+        try{
+            errorCode   = json["error"]["code"];
+            errorReason = json["error"]["message"];
+        }
+        catch (...){
+            // failed...
+        }
+
+        responseFailureReason = std::format("ERROR CODE {} - {}",
+                                             errorCode.empty() ? "NONE" : errorCode,
+                                             errorReason);
+    }
+
+    responseOK = (status == "completed" && responseFailureReason.empty());
+
+    if(json.count("output") == 0){
+        // no output objects
+
+    }
+    else{
+        auto &jsonOutputs = json["output"];
+
+        for(const auto &output : jsonOutputs){
+            try{
+                chatGPTOutputItem item = OutputItemFromJson(output);
+                outputs.push_back(std::move(item));
+            }
+            catch (...){
+                // throw away this output
+            }
+        }
+    }
+}
+
 chatGPT::chatGPT(const std::string_view& openAIKey) : m_openAI_Key(openAIKey){
     m_curl = curl_easy_init();
+
+
+    m_dispatcher = std::thread(&chatGPT::HandleQueue, this);
 }
 chatGPT::~chatGPT(){
     std::unique_lock lock (m_dispatchQMtx);
@@ -106,18 +214,21 @@ void chatGPT::HandleQueue(void){
         curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYPEER, 0);
 
         chatGPTResponse chatGPTResponse;
-        chatGPTResponse.HTTPCode = curl_easy_perform(m_curl);
-
-        if((chatGPTResponse.HTTPCode = curl_easy_perform(m_curl))!=CURLE_OK){
+        if((chatGPTResponse.HTTPCode = curl_easy_perform(m_curl)) != CURLE_OK){
             // nothing to do. Just return the error code.
             request.promise.set_value(std::move(chatGPTResponse));
             continue;
         }
 
-        // to do
+        nlohmann::json jsonResponse = nlohmann::json::parse(curlResponse);
+        chatGPTResponse.Put(jsonResponse);
         request.promise.set_value(std::move(chatGPTResponse));
 
+        if (NULL != headers){
+            curl_slist_free_all (headers);
+        }
     }
 }
+
 
 }

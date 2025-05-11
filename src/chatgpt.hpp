@@ -11,6 +11,7 @@
 #include <mutex>
 #include <queue>
 #include <thread>
+#include <variant>
 
 namespace openai{
 
@@ -19,6 +20,16 @@ enum Role{
     ROLE_ASSISTANT,
 };
 
+enum OutputItemType{
+    OUTPUT_MESSAGE,
+    OUTPUT_FILE_SEARCH,
+    OUTPUT_FUNCTION_TOOL,
+    OUTPUT_WEB_SEARCH,
+    OUTPUT_COMPUTER_TOOL,
+    OUTPUT_REASONING
+};
+
+
 struct chatGPTMessage{
     Role role;
     std::string message;
@@ -26,6 +37,10 @@ struct chatGPTMessage{
 
 
 struct chatGPTModel{
+    chatGPTModel() = default;
+    chatGPTModel(std::string_view& view) : modelValue(view){
+    }
+
     std::string modelValue;
 };
 
@@ -40,8 +55,40 @@ struct chatGPTPrompt{
     nlohmann::json JsonRequest(void) const;
 };
 
+
+struct chatGPTOutputMessage{
+    bool refused = false;
+
+    std::string id;
+    std::string message;
+
+};
+
+
+typedef std::variant<chatGPTOutputMessage> chatGptOutputVariant;
+
+struct chatGPTOutputItem{
+    OutputItemType       outputType;
+    chatGptOutputVariant content;
+};
+
 struct chatGPTResponse{
+
     CURLcode HTTPCode = CURLE_OK;
+    bool responseOK   = false;
+    std::string status;
+    std::string responseFailureReason;
+
+    std::string id;
+    std::vector<chatGPTOutputItem> outputs;
+
+    // usage factors
+    size_t inputToken = 0;
+    size_t outputTokens = 0;
+    size_t totalTokens = 0;
+
+    void Put(const nlohmann::json& json);
+
 };
 
 struct chatGPTDispatchRequest{

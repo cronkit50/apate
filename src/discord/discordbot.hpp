@@ -5,6 +5,8 @@
 
 #include <dpp/cluster.h>
 
+#include <chatgpt.hpp>
+
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
@@ -21,11 +23,15 @@ public:
     discordBot(discordBot&&)                 = delete;
     discordBot& operator=(discordBot&&)      = delete;
 
+
+
     void Start(void);
 
     ~discordBot();
     bool WaitForStart();
     void SetPersistence(discord::serverPersistence &&persistence);
+
+    void SetChatGPT(openai::chatGPT *chatGPT);
 
 private:
     void HandleOnReady(const dpp::ready_t& event);
@@ -42,6 +48,8 @@ private:
     std::mutex              m_eventCallbackMtx;
 
     serverPersistence       m_persistence;
+
+    openai::chatGPT*        m_chatGPT = nullptr;
 };
 }
 
