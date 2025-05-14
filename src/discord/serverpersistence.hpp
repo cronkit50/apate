@@ -5,23 +5,24 @@
 
 #include <filesystem>
 #include <fstream>
+#include <list>
 #include <map>
 #include <string>
 #include <string_view>
-#include <list>
+#include <vector>
 
 namespace discord
 {
 struct channelRecordFile{
     std::filesystem::path pathToFile;
-    std::fstream          oStream;
+    std::fstream          fStream;
 
 };
 
 struct messageRecord{
 
     messageRecord(const dpp::message_create_t& event);
-
+    messageRecord(void) = default;
     dpp::snowflake snowflake;
 
     std::string message;
@@ -30,8 +31,6 @@ struct messageRecord{
 
     std::string authorGlobalName;
     std::string authorUserName;
-
-    void Serialize(std::ostream& outStream);
 };
 
 class serverPersistence{
@@ -47,20 +46,25 @@ public:
     void SetLocalMessageCacheLimit(const size_t numMessages);
 
     void RecordMessageEvent(const dpp::message_create_t& event);
+    dpp::snowflake GetLastMessageID(const dpp::snowflake& channelID) const;
 
+    std::vector<messageRecord> GetMessagesByChannel(const dpp::snowflake& channelID, const size_t numMessages);
     serverPersistence& swap(serverPersistence& rhs);
 
 private:
 
     void CloseOpenHandles();
-    channelRecordFile &GetChannelFile(const dpp::message_create_t& event);
+
+
+    bool DoesHistoryExistForChannel(const dpp::snowflake& channelID);
+    std::shared_ptr<channelRecordFile> GetChannelFile(const dpp::message_create_t& event, const bool makeIfNotExist = true);
 
     std::filesystem::path m_baseDir;
 
     size_t m_localMessageCacheMax = 200;
 
     // by channel id
-    std::map<dpp::snowflake, channelRecordFile> m_channelLogFiles;
+    std::map<dpp::snowflake, std::shared_ptr<channelRecordFile>> m_channelLogFiles;
     std::map<dpp::snowflake, std::list<messageRecord>> m_messagesByChannel;
 };
 }

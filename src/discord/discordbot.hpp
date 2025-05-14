@@ -9,8 +9,11 @@
 
 #include <atomic>
 #include <condition_variable>
+#include <memory>
 #include <mutex>
 #include <thread>
+
+#define DEFAULT_AI_MODEL "o4-mini"
 
 namespace discord
 {
@@ -29,14 +32,18 @@ public:
 
     ~discordBot();
     bool WaitForStart();
-    void SetPersistence(discord::serverPersistence &&persistence);
-
-    void SetChatGPT(openai::chatGPT *chatGPT);
+    void SetWorkingDir(const std::filesystem::path dir);
+    void SetChatGPT(std::unique_ptr<openai::chatGPT> &&chatGPT);
 
 private:
     void HandleOnSlashCommand(const dpp::slashcommand_t& event);
     void HandleOnReady(const dpp::ready_t& event);
     void HandleMessageEvent(const dpp::message_create_t &event);
+
+    serverPersistence& GetPersistence(const dpp::snowflake& guildID);
+
+    std::string  m_model = DEFAULT_AI_MODEL;
+
 
     std::string  m_api;
     dpp::cluster m_cluster;
@@ -48,9 +55,11 @@ private:
 
     std::mutex              m_eventCallbackMtx;
 
-    serverPersistence       m_persistence;
+    std::map<dpp::snowflake, serverPersistence> m_persistenceByGuild;
 
-    openai::chatGPT*        m_chatGPT = nullptr;
+    std::unique_ptr<openai::chatGPT> m_chatGPT;
+
+    std::filesystem::path m_workingDir;
 };
 }
 

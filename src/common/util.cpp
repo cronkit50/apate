@@ -8,6 +8,7 @@
 #include <libloaderapi.h>
 #include <map>
 #include <mutex>
+#include <random>
 #include <stdexcept>
 #include <time.h>
 
@@ -79,6 +80,10 @@ unsigned long long SnowflakeToUnix(const dpp::snowflake& flake){
     return (flake >> 22) + 1420070400000; // discord epoch starts at 2015, convert it to 1970 epoch
 }
 
+dpp::snowflake UnixToSnowflake(const unsigned long long& unixTime){
+    return (unixTime - 1420070400000) << 22;
+}
+
 std::string SnowflakeFriendly(const dpp::snowflake& flake){
     // seconds
     long long timeStampSinceEpoch = SnowflakeToUnix(flake) / 1000;
@@ -124,4 +129,14 @@ std::string ToLowercase(const std::string_view& view){
                    [](unsigned char c){ return std::tolower(c); });
 
     return lowerCase;
+}
+
+size_t GetSessionToken(){
+    // unique per process ran but consistent within the session
+    static int sessionToken = [](){
+        std::time(nullptr) ^ _getpid();
+        return std::time(nullptr) ^ _getpid();
+        }();
+
+    return (size_t)sessionToken;
 }

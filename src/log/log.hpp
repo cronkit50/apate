@@ -114,12 +114,12 @@ void LogMessage(const char* file, size_t line, const log_severity severity, std:
     }
 
     logMessage log;
-    log.filePath = file;
-    log.fileName = std::filesystem::path(file).filename().string();
+    log.filePath   = file;
+    log.fileName   = std::filesystem::path(file).filename().string();
     log.lineNumber = line;
-    log.severity = severity;
-    log.timeStamp = std::chrono::system_clock::now();
-    log.threadID  = std::this_thread::get_id();
+    log.severity   = severity;
+    log.timeStamp  = std::chrono::system_clock::now();
+    log.threadID   = std::this_thread::get_id();
 
     try{
         log.message = std::vformat(fmt, std::make_format_args(args...));

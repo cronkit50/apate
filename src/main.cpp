@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <filesystem>
+#include <memory>
 
 int main(int argc, char* argv[]) {
 
@@ -17,13 +18,11 @@ int main(int argc, char* argv[]) {
     APATE_LOG_INFO("Starting Apate...");
 
     auto cfg = CfgGetFile(CFG_FILE_ENV);
-    openai::chatGPT* chatGPT = new openai::chatGPT(cfg->ReadPpty<std::string>("OPEN_API_KEY"));
+    std::unique_ptr<openai::chatGPT> chatGPT = std::make_unique<openai::chatGPT>(cfg->ReadPpty<std::string>("OPEN_API_KEY"));
     discord::serverPersistence persistence;
-    persistence.SetBaseDirectory(GetDirectory(DIRECTORY_PERSISTENCE));
-
     discord::discordBot discordBot(cfg->ReadPpty<std::string>("DISCORD_BOT_KEY"));
-    discordBot.SetPersistence(std::move(persistence));
-    discordBot.SetChatGPT(chatGPT);
+    discordBot.SetWorkingDir(GetDirectory(DIRECTORY_PERSISTENCE));
+    discordBot.SetChatGPT(std::move(chatGPT));
     discordBot.Start();
     discordBot.WaitForStart();
 

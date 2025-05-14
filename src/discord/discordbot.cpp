@@ -51,20 +51,22 @@ bool discordBot::WaitForStart(){
     return m_botStartedOK;
 }
 
-void discordBot::SetPersistence(discord::serverPersistence&& persistence){
-    m_persistence = std::forward<discord::serverPersistence>(persistence);
+void discordBot::SetWorkingDir(const std::filesystem::path dir){
+    m_workingDir = dir;
+    m_workingDir.remove_filename();
 }
 
-void discordBot::SetChatGPT(openai::chatGPT* chatGPT){
+
+void discordBot::SetChatGPT(std::unique_ptr<openai::chatGPT> &&chatGPT){
     if (!chatGPT){
         return;
     }
 
     if (m_chatGPT){
-        delete m_chatGPT;
+        m_chatGPT.reset();
     }
 
-    m_chatGPT = chatGPT;
+    m_chatGPT = std::move(chatGPT);
 }
 
 
@@ -80,14 +82,13 @@ void discordBot::HandleOnSlashCommand(const dpp::slashcommand_t& event){
             openai::chatGPTPrompt prompt;
             prompt.systemPrompt = "You are a helpful AI, but be brief in your answers.";
             prompt.request = query;
-            prompt.model.modelValue   = "o4-mini-2025-04-16";
+            prompt.model.modelValue = m_model;
 
             std::string chatGPTQuery = event.command.usr.username + " asks: " + query;
             event.reply(chatGPTQuery);
 
             std::thread async([this,prompt,event](void){
                 try{
-
                     std::future<openai::chatGPTResponse> future = m_chatGPT->AskChatGPTAsync(prompt);
 
                     openai::chatGPTResponse response = future.get();
@@ -96,7 +97,7 @@ void discordBot::HandleOnSlashCommand(const dpp::slashcommand_t& event){
                         m_cluster.message_create(msg);
                     }
                 } catch (const std::exception &e){
-                    APATE_LOG_INFO_AND_RETHROW (e);
+                    APATE_LOG_WARN_AND_RETHROW (e);
                 }
              });
 
@@ -111,7 +112,6 @@ void discordBot::HandleOnReady(const dpp::ready_t& event){
     askChatGPT.add_option (dpp::command_option{ dpp::co_string, "query",  "ask i guess", true });
     m_cluster.global_bulk_command_create({ askChatGPT });
 
-
     m_botStartedOK      = true;
     m_botThreadWaitFlag = true;
     m_botThreadWaitCV.notify_all();
@@ -120,7 +120,33 @@ void discordBot::HandleOnReady(const dpp::ready_t& event){
 
 void discordBot::HandleMessageEvent(const dpp::message_create_t& event){
     std::lock_guard lock(m_eventCallbackMtx);
-    m_persistence.RecordMessageEvent(event);
+
+    try {
+        GetPersistence(event.msg.guild_id).RecordMessageEvent(event);
+    }
+    catch (const std::exception &e){
+        APATE_LOG_WARN("Failed to record message event - {}", e.what());
+    }
+    catch(...){
+        APATE_LOG_WARN("Failed to record message event - unknown exception");
+    }
+}
+
+serverPersistence& discordBot::GetPersistence(const dpp::snowflake& guildID){
+    if(m_persistenceByGuild.count(guildID)<=0){
+        std::filesystem::path guildDir = m_workingDir;
+        guildDir.append(guildID.str() + "\\");
+
+        serverPersistence persistence;
+        persistence.SetBaseDirectory(guildDir);
+
+        auto [it,_] = m_persistenceByGuild.insert({ guildID, std::move(persistence) });
+        return(it->second);
+
+    }
+    else{
+        return m_persistenceByGuild[guildID];
+    }
 }
 
 }

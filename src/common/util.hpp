@@ -30,6 +30,8 @@ constexpr std::size_t operator "" _zu(unsigned long long const n){
 
 unsigned long long SnowflakeToUnix(const dpp::snowflake& flake);
 
+dpp::snowflake UnixToSnowflake(const unsigned long long& unixTime);
+
 std::string SnowflakeFriendly (const dpp::snowflake &flake);
 
 std::string ReplaceSubstring(const std::string_view& original,
@@ -37,5 +39,7 @@ std::string ReplaceSubstring(const std::string_view& original,
                              const std::string_view& replace);
 
 std::string ToLowercase (const std::string_view &view);
+
+size_t GetSessionToken();
 
 #endif
