@@ -6,129 +6,227 @@
 #include <filesystem>
 #include <sstream>
 
-#define SERIAL_LVL_1          "    "
-#define MESSAGE_LOG_EXTENSION ".log"
-#define FILE_BATCH_SIZE_BYTES 1000
 
-static constexpr std::string_view CONTINUITY_MARKER ("-CONTINUITY-");
+#define SERVER_PERSISTENCE_DB_FILENAME "persistence.db"
 
-static std::string EscapeContent(const std::string_view& content)
-{
-    return ReplaceSubstring(content, "\n", "$$\\n");
-}
-
-static std::string UnescapeSequence(const std::string_view& content)
-{
-    return ReplaceSubstring(content, "$$\\n", "\n");
-}
-
-static std::filesystem::path BuildPathToChannelLog(const std::filesystem::path& baseDir, const dpp::snowflake& channelID){
-    std::filesystem::path pathToChannel(baseDir);
-    pathToChannel.append(channelID.str() + MESSAGE_LOG_EXTENSION);
+static std::filesystem::path BuildPathToDatabase(const std::filesystem::path& baseDir){
+    std::filesystem::path pathToChannel(baseDir.string() + SERVER_PERSISTENCE_DB_FILENAME);
 
     return pathToChannel;
 }
 
-static std::string MakeContinuityMarkerNow(void){
-    return (std::string(CONTINUITY_MARKER).append (std::to_string (GetSessionToken ())));
-}
-
-
-static std::string GetCurrentLine(std::fstream& fstream) {
-    if (!fstream.is_open()) {
-        APATE_LOG_WARN("fstream unexpectedly closed");
-        return "";
-    }
-
-    // Get current position
-    const size_t originalPos = fstream.tellg();
-    size_t       currPos     = originalPos;
-
-    // Move back one character at a time until a newline or beginning of file
-    std::string line;
-
-    if (originalPos == 0){
-        // nothing to be read
-    }
-    else{
-        while(currPos>0){
-            fstream.seekg(currPos--);
-
-            // found line ending
-            if(fstream.peek() == '\n'){
-
-                // move past the newline
-                currPos += 2;
-                fstream.seekg(currPos);
-
-                break;
-            }
-        }
-        std::getline(fstream, line);
-    }
-
-    fstream.seekg(originalPos); // Restore original position
-
-    return line;
-}
-
-static discord::messageRecord FindPrecedingNearestRecord(std::fstream &fstream){
-    discord::messageRecord record;
-
-    std::streampos originalPos = fstream.tellg();
-    std::string line = GetCurrentLine (fstream);
-
-    std::streampos currPos = originalPos;
-    while (true){
-        if (!line.empty() && std::isdigit(line[0])){
-            // this is a message record
-            std::stringstream ss(line);
-
-            ss >> record.snowflake
-               >> record.authorUserName
-               >> record.authorGlobalName
-               >> record.timeStampUnixMs
-               >> record.timeStampFriendly;
-            // read the rest of the line
-            std::getline(ss, record.message);
-            record.message = UnescapeSequence(record.message);
-            break;
-        }
-
-        currPos = currPos - std::streamoff(line.length() + 1);
-
-        if(currPos<=0){
-            // reached the beginning of the file
-            break;
-        }
-
-        line = GetCurrentLine (fstream);
-    }
-
-    return record;
-}
-static std::ostream& operator<<(std::ostream& outStream, const discord::messageRecord& record){
-    outStream<<record.snowflake   <<                                 '\n'
-             << SERIAL_LVL_1      << record.authorUserName        << '\n'
-             << SERIAL_LVL_1      << record.authorGlobalName      << '\n'
-             << SERIAL_LVL_1      << record.timeStampUnixMs       << '\n'
-             << SERIAL_LVL_1      << record.timeStampFriendly     << '\n'
-             << SERIAL_LVL_1      << EscapeContent(record.message);
-
-    return outStream;
-}
-
-
-
 namespace discord{
 
+persistenceDatabase::persistenceDatabase(const std::filesystem::path& pathToDb){
+    Open(pathToDb);
+}
+
+void persistenceDatabase::Open(const std::filesystem::path& pathToDb){
+
+    Close();
+
+    if(!std::filesystem::exists(pathToDb)){
+        APATE_LOG_INFO("Creating new database {}", pathToDb.string())
+
+        std::filesystem::path dbDir = pathToDb;
+        std::filesystem::create_directories(dbDir.remove_filename());
+
+        int rc = SQLITE_OK;
+
+        if(rc = sqlite3_open(pathToDb.string ().c_str (), &db) != SQLITE_OK){
+            APATE_LOG_WARN_AND_THROW(std::runtime_error,
+                                     "Failed to open sqlite3 database {} - {}",
+                                     pathToDb.string(),
+                                     sqlite3_errstr(rc));
+        }
+    }
+
+    databaseFile = pathToDb.string();
+    databaseName = pathToDb.filename().string();
+}
+
+void persistenceDatabase::Close(){
+    int rc = SQLITE_OK;
+
+    if(!db){
+        return;
+    }
+
+    if((rc = sqlite3_close(db)) != SQLITE_OK){
+        APATE_LOG_WARN_AND_THROW(std::runtime_error,
+                                 "sqlite3_close({}) failed - {}",
+                                 databaseFile,
+                                 sqlite3_errstr(rc));
+    }
+    else{
+
+        APATE_LOG_INFO("closed sqlite3 database {}",
+                       databaseFile);
+
+        db = nullptr;
+
+        databaseFile.clear();
+        databaseName.clear();
+    }
+}
+
+bool persistenceDatabase::IsOpen(void) const{
+    return db;
+}
+
+persistenceDatabase& persistenceDatabase::operator<<(const messageRecord& message){
+    if(!IsOpen()){
+        APATE_LOG_WARN("sqlite3 database {} is not open",
+                       databaseFile);
+        return *this;
+    }
+
+    char* sqlError = nullptr;
+    int   rc       = SQLITE_OK;
+
+    std::string tableName = GetTableName(message.channelId);
+
+    std::string sql = std::format("INSERT INTO {} (snowflake, authorUserName, authorGlobalName, timeStampUnixMs, timeStampFriendly, message) "
+                                  "VALUES ({}, '{}', '{}', {}, '{}', '{}');",
+                                  tableName,
+                                  message.snowflake.str(),
+                                  message.authorUserName,
+                                  message.authorGlobalName,
+                                  message.timeStampUnixMs,
+                                  message.timeStampFriendly,
+                                  message.message);
+
+    if(rc = CreateChannelMessagesTable(message.channelId) != SQLITE_OK){
+        APATE_LOG_WARN("{} - Failed to create table for channel {} - {}",
+                       databaseFile,
+                       tableName,
+                       sqlite3_errstr(rc));
+    }
+    else if((rc = sqlite3_exec(db, sql.c_str(), NULL, NULL, &sqlError)) != SQLITE_OK){
+        APATE_LOG_WARN("{} Failed to insert message into sqlite3 database {} - {}",
+                       databaseFile,
+                       tableName,
+                       sqlite3_errstr(rc));
+
+        sqlite3_free(sqlError);
+    }
+
+    return *this;
+}
+
+discord::persistenceDatabase::sql_rc persistenceDatabase::GetLatestMessagesByChannel(const dpp::snowflake channelId, const size_t numMessages, std::vector<messageRecord> &message){
+
+
+    std::vector<messageRecord> messages;
+
+    if(!numMessages){
+        message = messages;
+        return SQLITE_OK;
+    }
+    if(!IsOpen()){
+        APATE_LOG_WARN("sqlite3 database {} is not open",
+                       databaseFile);
+        return SQLITE_INTERNAL;
+    }
+
+    sql_rc rc = SQLITE_OK;
+
+    // descending order, latest first
+    std::string sql = std::format("SELECT * FROM {} ORDER BY snowflake DESC LIMIT {};",
+                                  GetTableName(channelId),
+                                  numMessages);
+
+    if(rc = CreateChannelMessagesTable(channelId) != SQLITE_OK){
+        APATE_LOG_WARN("{} - Failed to create table for channel {} - {}",
+                       databaseFile,
+                       channelId.str(),
+                       sqlite3_errstr(rc));
+    }
+    else if (rc = (sqlite3_exec(db,
+                                sql.c_str(),
+                                [](void* data, int argc, char** argv, char** azColName){
+                                    std::vector<messageRecord>* messages = static_cast<std::vector<messageRecord>*>(data);
+
+                                    messageRecord msg;
+                                    msg.snowflake = dpp::snowflake(std::stoull(argv[0]));
+                                    msg.authorUserName = argv[1];
+                                    msg.authorGlobalName = argv[2];
+                                    msg.timeStampUnixMs = std::stoll(argv[3]);
+                                    msg.timeStampFriendly = argv[4];
+                                    msg.message = argv[5];
+                                    messages->push_back(msg);
+                                    return 0;
+                                },
+                                &messages, nullptr) != SQLITE_OK)){
+
+
+        APATE_LOG_WARN("{} - Failed to get messages from sqlite3 database {} - {}",
+                        databaseFile,
+                        sqlite3_errstr(rc));
+        }
+
+    if (SQLITE_OK == rc){
+        message = messages;
+    }
+
+    return rc;
+
+}
+
+persistenceDatabase::~persistenceDatabase(){
+    try{
+        Close();
+    } catch(...){
+        APATE_LOG_WARN("{} - Failed to close sqlite3 database",
+                       databaseFile);
+    }
+}
+
+discord::persistenceDatabase::sql_rc persistenceDatabase::CreateChannelMessagesTable(const dpp::snowflake channelId){
+    if(channelId.empty()){
+        APATE_LOG_DEBUG("Channel ID is empty");
+        return SQLITE_ERROR;
+    }
+
+    sql_rc rc     = SQLITE_OK;
+    char*  errMsg = nullptr;
+
+    const std::string sql = std::format ("CREATE TABLE IF NOT EXISTS {} ("
+                                         "snowflake INTEGER PRIMARY KEY,"
+                                         "authorUserName TEXT NOT NULL,"
+                                         "authorGlobalName TEXT NOT NULL,"
+                                         "timeStampUnixMs INTEGER NOT NULL,"
+                                         "timeStampFriendly TEXT NOT NULL,"
+                                         "message TEXT);",
+                                         GetTableName(channelId));
+
+    if(rc = sqlite3_exec(db, sql.c_str(), NULL, NULL, &errMsg) != SQLITE_OK){
+
+        APATE_LOG_WARN("sqlite3_exec({}) failed - {}",
+                       sql,
+                       sqlite3_errstr(rc));
+
+        sqlite3_free(errMsg);
+    }
+
+    return rc;
+}
+
+std::string persistenceDatabase::GetTableName(const dpp::snowflake channelId) const {
+
+    std::string tableName = "messages_" + channelId.str ();
+    return tableName;
+}
+
+
 messageRecord::messageRecord(const dpp::message& msg){
-    snowflake         = msg.id;
-    message           = msg.content;
-    timeStampUnixMs   = SnowflakeToUnix (snowflake);
-    timeStampFriendly = SnowflakeFriendly (snowflake);
-    authorGlobalName  = msg.author.global_name;
-    authorUserName    = msg.author.username;
+    channelId = msg.channel_id;
+    snowflake = msg.id;
+    message = msg.content;
+    timeStampUnixMs = SnowflakeToUnix(snowflake);
+    timeStampFriendly = SnowflakeFriendly(snowflake);
+    authorGlobalName = msg.author.global_name;
+    authorUserName = msg.author.username;
 }
 
 
@@ -146,9 +244,7 @@ serverPersistence::~serverPersistence(){
 
 serverPersistence::serverPersistence(serverPersistence&& rhs) noexcept{
     m_baseDir = std::move(rhs.m_baseDir);
-
-    m_channelLogFiles = std::move(rhs.m_channelLogFiles);
-
+    m_persistenceDatabase = std::move(rhs.m_persistenceDatabase);
 }
 
 serverPersistence& serverPersistence::operator=(serverPersistence&& rhs) noexcept{
@@ -164,191 +260,100 @@ void serverPersistence::SetBaseDirectory(const std::filesystem::path& dir){
     m_baseDir = dir;
     m_baseDir.remove_filename();
 }
-void serverPersistence::SetLocalMessageCacheLimit(const size_t numMessages){
-    m_localMessageCacheMax = numMessages;
-}
+
 
 void serverPersistence::RecordMessage(const dpp::message& msg){
-    auto &messageCache = m_messagesByChannel[msg.channel_id];
     messageRecord messageRecord(msg);
 
-    if (messageCache.size() >= m_localMessageCacheMax) {
-
-        // reuse the front (oldest) entry and move it to the end.
-        (*messageCache.begin()) = messageRecord;
-        messageCache.splice(messageCache.end(), messageCache, messageCache.begin());
-
-    }
-    else{
-        messageCache.push_back(messageRecord);
-    }
-
-    std::shared_ptr<channelRecordFile> fileOpen;
-    if((fileOpen = GetChannelFile(msg.channel_id)) == nullptr){
+    std::shared_ptr<persistenceDatabase> dbHandle;
+    if((dbHandle = GetDbHandle(msg.channel_id)) == nullptr){
         APATE_LOG_WARN_AND_THROW(std::runtime_error,
                                  "Failed to open file for channel {}",
-                                 msg.channel_id.str ());
+                                 msg.channel_id.str());
     }
-
-    std::string line = GetCurrentLine(fileOpen->fStream);
-
-    if(0 == line.compare(0, CONTINUITY_MARKER.size(), CONTINUITY_MARKER)){
-        std::string sessionToken = line.substr(CONTINUITY_MARKER.size());
-
-        if(sessionToken == std::to_string(GetSessionToken())){
-            // this is the same session, so we need to remove the old continuity marker
-            fileOpen->fStream.seekp(-std::streamoff(line.length()), std::ios::cur);
-        }
-        else{
-            // this is a different session from the last message. Let's check if the last message is this one.
-            // if not, then there could be gap between last session and now.
-
-            discord::messageRecord nearest = FindPrecedingNearestRecord(fileOpen->fStream);
-            if(nearest.snowflake == msg.id){
-                // this is the same message, so we need to remove the old continuity marker
-                fileOpen->fStream.seekp(-std::streamoff(line.length()), std::ios::cur);
-            }
-            else{
-                // leave the continuity marker in place, since we don't have the history between now,
-                // and the previous session
-            }
-
-        }
+    else{
+        *dbHandle<<messageRecord;
     }
-
-    fileOpen->fStream << '\n';
-    fileOpen->fStream << messageRecord;
-
-    // write a continuity marker
-    fileOpen->fStream << '\n';
-    fileOpen->fStream << MakeContinuityMarkerNow();
-    fileOpen->fStream.flush ();
-
 }
 
 void serverPersistence::RecordMessages(const dpp::message_map& messages){
-    for (const auto&[_, message] : messages){
-        RecordMessage(message);
+    for(const auto& [_, message]:messages){
+        try{
+
+            RecordMessage(message);
+
+        } catch(const std::exception& e){
+            APATE_LOG_WARN("Failed to record message {} - {}",
+                           message.id.str (),
+                           e.what());
+        }
+
     }
 }
 
 size_t serverPersistence::GetContinuousMessages(const dpp::snowflake snowflake){
     size_t num = 0;
 
-    std::shared_ptr<channelRecordFile> channelFile = GetChannelFile(snowflake, false);
+    std::shared_ptr<persistenceDatabase> channelFile = GetDbHandle(snowflake);
 
-    if(!channelFile){
-        APATE_LOG_WARN("Failed to get channel file for snowflake {}", snowflake.str());
-        return num;
-    }
-
-
-
+    return 0;
 }
 
 
 std::vector<messageRecord> serverPersistence::GetMessagesByChannel(const dpp::snowflake& channelID, const size_t numMessages){
+
+    std::shared_ptr<persistenceDatabase> channelFile = GetDbHandle();
     std::vector<messageRecord> messages;
 
-    auto it = m_messagesByChannel.begin();
-
-    if (!numMessages){
-        return messages;
+    if(nullptr==channelFile){
+        APATE_LOG_WARN("Failed to get database handle for channel {}", channelID.str());
     }
-    else if((it = m_messagesByChannel.find(channelID)) == m_messagesByChannel.end()){
-        return messages;
-    }
+    else{
+        persistenceDatabase::sql_rc rc = channelFile->GetLatestMessagesByChannel(channelID, numMessages, messages);
 
-    auto& messageCache = it->second;
-    messages.reserve(std::min(messageCache.size(), numMessages));
-    for(auto it = messageCache.begin(); it!=messageCache.end(); ++it){
-        messages.push_back(*it);
-
-        if(messages.size() >= numMessages){
-            break;
+        if(rc != SQLITE_OK){
+            APATE_LOG_WARN("Failed to get messages from channel {} - {}",
+                           channelID.str(),
+                           sqlite3_errstr(rc));
         }
     }
 
     return messages;
-
 }
 
 serverPersistence& serverPersistence::swap(serverPersistence& rhs){
-    std::swap(m_baseDir, rhs.m_baseDir);
-    std::swap(m_channelLogFiles, rhs.m_channelLogFiles);
+    if(&rhs!=this){
+        std::swap(m_baseDir, rhs.m_baseDir);
+        std::swap(m_persistenceDatabase, rhs.m_persistenceDatabase);
+
+    }
 
     return *this;
 }
 
-void serverPersistence::CloseOpenHandles(){
-    for (auto &[_, logFile] : m_channelLogFiles){
-        try{
-            if(logFile->fStream.is_open()){
-                logFile->fStream.close();
-            }
-        }
-        catch(...){
-            // don't emit exception for this
-        }
-    }
-}
 
 bool serverPersistence::DoesHistoryExistForChannel(const dpp::snowflake& channelID){
-    return !GetMessagesByChannel (channelID, 1).empty();
+    return !GetMessagesByChannel(channelID, 1).empty();
 }
 
-std::shared_ptr<channelRecordFile> serverPersistence::GetChannelFile(const dpp::snowflake channelId, const bool makeIfNotExist){
+std::shared_ptr<persistenceDatabase> serverPersistence::GetDbHandle(const bool makeIfNotExist){
 
     bool retrieved = false;
 
-    std::shared_ptr<channelRecordFile> channelRecordFilePtrTemp;
+    if(!m_persistenceDatabase && makeIfNotExist){
 
-    const std::filesystem::path logFilePath = BuildPathToChannelLog(m_baseDir, channelId);
-    const std::filesystem::path logFileDir  = std::filesystem::path(logFilePath).remove_filename();
+        const std::filesystem::path logFilePath = BuildPathToDatabase(m_baseDir);
 
-    if(m_channelLogFiles.count(channelId) > 0){
-        channelRecordFilePtrTemp = m_channelLogFiles.at(channelId);
-    }
-    else if(!makeIfNotExist){
-        // don't make a new directory
-        retrieved = false;
-        return nullptr;
-    }
-    else{
-        // no record yet. Let's make one.
-        channelRecordFilePtrTemp = std::make_shared<channelRecordFile>();
+        try{
+            m_persistenceDatabase = std::make_shared<persistenceDatabase>(logFilePath);
 
-        channelRecordFilePtrTemp->pathToFile = logFilePath;
-        channelRecordFilePtrTemp->fStream.exceptions(std::ios_base::failbit | std::ios_base::badbit);
-    }
-
-    if(!channelRecordFilePtrTemp->fStream.is_open()){
-
-        std::filesystem::create_directories(logFileDir);
-
-        if(!std::filesystem::exists(logFilePath)){
-            // create the file
-            channelRecordFilePtrTemp->fStream.open(logFilePath, std::ios::out);
-
-            try {
-                channelRecordFilePtrTemp->fStream.close();
-            }
-            catch (std::exception &e){
-                APATE_LOG_WARN("Failed to close file {} - {}",
-                               logFilePath.string(),
-                               e.what());
-            }
-            catch(...){
-                APATE_LOG_WARN("Failed to close file {}", logFilePath.string());
-            }
+        } catch(const std::exception& e){
+            APATE_LOG_WARN("Failed to create channel log file {} - {}",
+                           logFilePath.string(),
+                           e.what());
         }
 
-        // re-open it in input/output mode
-        channelRecordFilePtrTemp->fStream.open(channelRecordFilePtrTemp->pathToFile, std::ios::binary|std::ios::in|std::ios::out);
-        channelRecordFilePtrTemp->fStream.seekg(0, std::ios::end);
-        auto [it, _] = m_channelLogFiles.insert(std::pair{ channelId, channelRecordFilePtrTemp });
     }
-
-    return channelRecordFilePtrTemp;
+    return m_persistenceDatabase;
 }
 }

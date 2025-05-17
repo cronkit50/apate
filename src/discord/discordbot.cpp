@@ -127,6 +127,7 @@ void discordBot::HandleMessageEvent(const dpp::message_create_t& event){
 
         std::lock_guard lock(persistenceWrapper.mutex);
         persistenceWrapper.persistence.RecordMessage(event.msg);
+
     }
     catch (const std::exception &e){
         APATE_LOG_WARN("Failed to record message event - {}", e.what());

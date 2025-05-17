@@ -13,6 +13,7 @@ vs2022/intermediate/*
 # includes files, third party binaries
 thirdparty/*
 
+working/persistence/
 #vcpkg
 vcpkg_installed
 vcpkg

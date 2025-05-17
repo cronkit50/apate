@@ -1,7 +1,10 @@
 #ifndef SERVER_PERSISTENCE_HPP
 #define SERVER_PERSISTENCE_HPP
 
+#include <log/log.hpp>
+
 #include <dpp/dpp.h>
+#include <sqlite3/sqlite3.h>
 
 #include <filesystem>
 #include <fstream>
@@ -11,29 +14,16 @@
 #include <string_view>
 #include <vector>
 
+
 namespace discord
 {
-struct channelRecordFile{
-    std::filesystem::path pathToFile;
-    std::fstream          fStream;
-    channelRecordFile() = default;
-    channelRecordFile(channelRecordFile&) = delete;
-    channelRecordFile(channelRecordFile&&) = delete;
-    channelRecordFile& operator=(channelRecordFile&) = delete;
-    channelRecordFile& operator=(channelRecordFile&&) = delete;
-
-    ~channelRecordFile(){
-        if(fStream.is_open()){
-            fStream.close();
-        }
-    }
-
-};
 
 struct messageRecord{
 
     messageRecord(const dpp::message& event);
     messageRecord(void) = default;
+
+    dpp::snowflake channelId;
     dpp::snowflake snowflake;
 
     std::string message;
@@ -43,6 +33,42 @@ struct messageRecord{
     std::string authorGlobalName;
     std::string authorUserName;
 };
+
+
+struct persistenceDatabase{
+
+    typedef int sql_rc;
+
+    std::string databaseName;
+    std::string databaseFile;
+
+    sqlite3 *db = nullptr;
+
+    persistenceDatabase(void) = default;
+    persistenceDatabase(const std::filesystem::path &pathToDb);
+    void Open(const std::filesystem::path &pathToDb);
+
+    void Close();
+
+    bool IsOpen(void) const;
+
+    persistenceDatabase(persistenceDatabase&) = delete;
+    persistenceDatabase(persistenceDatabase&&) = delete;
+    persistenceDatabase& operator=(persistenceDatabase&) = delete;
+    persistenceDatabase& operator=(persistenceDatabase&&) = delete;
+
+    persistenceDatabase& operator<<(const messageRecord& message);
+
+    sql_rc GetLatestMessagesByChannel(const dpp::snowflake channelId, const size_t numMessages, std::vector<messageRecord> &message);
+
+    ~persistenceDatabase();
+
+private:
+    sql_rc CreateChannelMessagesTable(const dpp::snowflake channelId);
+    std::string GetTableName(const dpp::snowflake channelId) const;
+
+};
+
 
 class serverPersistence{
 public:
@@ -54,7 +80,6 @@ public:
     serverPersistence& operator=(serverPersistence &&rhs) noexcept;
 
     void SetBaseDirectory(const std::filesystem::path &dir);
-    void SetLocalMessageCacheLimit(const size_t numMessages);
 
     void RecordMessage(const dpp::message& msg);
     void RecordMessages(const dpp::message_map &messages);
@@ -64,19 +89,13 @@ public:
 
 private:
 
-    void CloseOpenHandles();
-
-
     bool DoesHistoryExistForChannel(const dpp::snowflake& channelID);
-    std::shared_ptr<channelRecordFile> GetChannelFile(const dpp::snowflake channelId, const bool makeIfNotExist = true);
+    std::shared_ptr<persistenceDatabase> GetDbHandle(const bool makeIfNotExist = true);
 
     std::filesystem::path m_baseDir;
 
-    size_t m_localMessageCacheMax = 200;
 
-    // by channel id
-    std::map<dpp::snowflake, std::shared_ptr<channelRecordFile>> m_channelLogFiles;
-    std::map<dpp::snowflake, std::list<messageRecord>> m_messagesByChannel;
+    std::shared_ptr<persistenceDatabase> m_persistenceDatabase;
 };
 }
 
