@@ -8,6 +8,7 @@
 
 #define SERIAL_LVL_1          "    "
 #define MESSAGE_LOG_EXTENSION ".log"
+#define FILE_BATCH_SIZE_BYTES 1000
 
 static constexpr std::string_view CONTINUITY_MARKER ("-CONTINUITY-");
 
@@ -73,10 +74,13 @@ static std::string GetCurrentLine(std::fstream& fstream) {
 
 static discord::messageRecord FindPrecedingNearestRecord(std::fstream &fstream){
     discord::messageRecord record;
+
+    std::streampos originalPos = fstream.tellg();
     std::string line = GetCurrentLine (fstream);
 
-    while (line.empty()){
-        if(std::isdigit(line[0])){
+    std::streampos currPos = originalPos;
+    while (true){
+        if (!line.empty() && std::isdigit(line[0])){
             // this is a message record
             std::stringstream ss(line);
 
@@ -88,6 +92,13 @@ static discord::messageRecord FindPrecedingNearestRecord(std::fstream &fstream){
             // read the rest of the line
             std::getline(ss, record.message);
             record.message = UnescapeSequence(record.message);
+            break;
+        }
+
+        currPos = currPos - std::streamoff(line.length() + 1);
+
+        if(currPos<=0){
+            // reached the beginning of the file
             break;
         }
 
@@ -111,13 +122,13 @@ static std::ostream& operator<<(std::ostream& outStream, const discord::messageR
 
 namespace discord{
 
-messageRecord::messageRecord(const dpp::message_create_t& event){
-    snowflake         = event.msg.id;
-    message           = event.msg.content;
+messageRecord::messageRecord(const dpp::message& msg){
+    snowflake         = msg.id;
+    message           = msg.content;
     timeStampUnixMs   = SnowflakeToUnix (snowflake);
     timeStampFriendly = SnowflakeFriendly (snowflake);
-    authorGlobalName  = event.msg.author.global_name;
-    authorUserName    = event.msg.author.username;
+    authorGlobalName  = msg.author.global_name;
+    authorUserName    = msg.author.username;
 }
 
 
@@ -130,13 +141,12 @@ serverPersistence::serverPersistence(){
 }
 
 serverPersistence::~serverPersistence(){
-    CloseOpenHandles();
+
 }
 
 serverPersistence::serverPersistence(serverPersistence&& rhs) noexcept{
     m_baseDir = std::move(rhs.m_baseDir);
 
-    CloseOpenHandles();
     m_channelLogFiles = std::move(rhs.m_channelLogFiles);
 
 }
@@ -158,9 +168,9 @@ void serverPersistence::SetLocalMessageCacheLimit(const size_t numMessages){
     m_localMessageCacheMax = numMessages;
 }
 
-void serverPersistence::RecordMessageEvent(const dpp::message_create_t& event){
-    auto &messageCache = m_messagesByChannel[event.msg.channel_id];
-    messageRecord messageRecord(event);
+void serverPersistence::RecordMessage(const dpp::message& msg){
+    auto &messageCache = m_messagesByChannel[msg.channel_id];
+    messageRecord messageRecord(msg);
 
     if (messageCache.size() >= m_localMessageCacheMax) {
 
@@ -174,10 +184,10 @@ void serverPersistence::RecordMessageEvent(const dpp::message_create_t& event){
     }
 
     std::shared_ptr<channelRecordFile> fileOpen;
-    if((fileOpen = GetChannelFile(event)) == nullptr){
+    if((fileOpen = GetChannelFile(msg.channel_id)) == nullptr){
         APATE_LOG_WARN_AND_THROW(std::runtime_error,
                                  "Failed to open file for channel {}",
-                                 event.msg.channel_id.str ());
+                                 msg.channel_id.str ());
     }
 
     std::string line = GetCurrentLine(fileOpen->fStream);
@@ -187,16 +197,16 @@ void serverPersistence::RecordMessageEvent(const dpp::message_create_t& event){
 
         if(sessionToken == std::to_string(GetSessionToken())){
             // this is the same session, so we need to remove the old continuity marker
-            fileOpen->fStream.seekp(-std::streampos(line.length()), std::ios::cur);
+            fileOpen->fStream.seekp(-std::streamoff(line.length()), std::ios::cur);
         }
         else{
             // this is a different session from the last message. Let's check if the last message is this one.
             // if not, then there could be gap between last session and now.
 
             discord::messageRecord nearest = FindPrecedingNearestRecord(fileOpen->fStream);
-            if(nearest.snowflake == event.msg.id){
+            if(nearest.snowflake == msg.id){
                 // this is the same message, so we need to remove the old continuity marker
-                fileOpen->fStream.seekp(-std::streampos(line.length()), std::ios::cur);
+                fileOpen->fStream.seekp(-std::streamoff(line.length()), std::ios::cur);
             }
             else{
                 // leave the continuity marker in place, since we don't have the history between now,
@@ -213,6 +223,26 @@ void serverPersistence::RecordMessageEvent(const dpp::message_create_t& event){
     fileOpen->fStream << '\n';
     fileOpen->fStream << MakeContinuityMarkerNow();
     fileOpen->fStream.flush ();
+
+}
+
+void serverPersistence::RecordMessages(const dpp::message_map& messages){
+    for (const auto&[_, message] : messages){
+        RecordMessage(message);
+    }
+}
+
+size_t serverPersistence::GetContinuousMessages(const dpp::snowflake snowflake){
+    size_t num = 0;
+
+    std::shared_ptr<channelRecordFile> channelFile = GetChannelFile(snowflake, false);
+
+    if(!channelFile){
+        APATE_LOG_WARN("Failed to get channel file for snowflake {}", snowflake.str());
+        return num;
+    }
+
+
 
 }
 
@@ -267,18 +297,17 @@ bool serverPersistence::DoesHistoryExistForChannel(const dpp::snowflake& channel
     return !GetMessagesByChannel (channelID, 1).empty();
 }
 
-std::shared_ptr<channelRecordFile> serverPersistence::GetChannelFile(const dpp::message_create_t& event, const bool makeIfNotExist){
+std::shared_ptr<channelRecordFile> serverPersistence::GetChannelFile(const dpp::snowflake channelId, const bool makeIfNotExist){
 
     bool retrieved = false;
 
     std::shared_ptr<channelRecordFile> channelRecordFilePtrTemp;
-    dpp::snowflake channel_id = event.msg.channel_id;
 
-    const std::filesystem::path logFilePath = BuildPathToChannelLog(m_baseDir, event.msg.channel_id);
+    const std::filesystem::path logFilePath = BuildPathToChannelLog(m_baseDir, channelId);
     const std::filesystem::path logFileDir  = std::filesystem::path(logFilePath).remove_filename();
 
-    if(m_channelLogFiles.count(channel_id) > 0){
-        channelRecordFilePtrTemp = m_channelLogFiles.at(channel_id);
+    if(m_channelLogFiles.count(channelId) > 0){
+        channelRecordFilePtrTemp = m_channelLogFiles.at(channelId);
     }
     else if(!makeIfNotExist){
         // don't make a new directory
@@ -317,7 +346,7 @@ std::shared_ptr<channelRecordFile> serverPersistence::GetChannelFile(const dpp::
         // re-open it in input/output mode
         channelRecordFilePtrTemp->fStream.open(channelRecordFilePtrTemp->pathToFile, std::ios::binary|std::ios::in|std::ios::out);
         channelRecordFilePtrTemp->fStream.seekg(0, std::ios::end);
-        auto [it, _] = m_channelLogFiles.insert(std::pair{ channel_id, channelRecordFilePtrTemp });
+        auto [it, _] = m_channelLogFiles.insert(std::pair{ channelId, channelRecordFilePtrTemp });
     }
 
     return channelRecordFilePtrTemp;

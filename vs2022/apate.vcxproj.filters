@@ -48,6 +48,21 @@
     <Filter Include="Source Files\discord">
       <UniqueIdentifier>{1b0c45ce-d72b-4798-a97b-f75c649f7bcd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="dll\curl\debug">
+      <UniqueIdentifier>{7a8497b5-8d54-4262-b71b-010fa31a73d9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dll\curl\release">
+      <UniqueIdentifier>{1027c1be-876c-4c97-b3b4-413a3a50b427}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dll\sqlite3">
+      <UniqueIdentifier>{aef3b9f8-ddf6-48c2-8754-73397aecf575}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dll\sqlite3\debug">
+      <UniqueIdentifier>{ced685b8-753d-4254-8c3c-d20ddba729d4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dll\sqlite3\release">
+      <UniqueIdentifier>{af4ceb37-c010-4e19-b936-163c2b7fefa5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\main.cpp">
@@ -82,41 +97,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\libdpp-10.0.35-win64\bin\libssl-1_1-x64.dll">
-      <Filter>dll\dpp\debug</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\libdpp-10.0.35-win64\bin\opus.dll">
-      <Filter>dll\dpp\debug</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\libdpp-10.0.35-win64\bin\zlib1.dll">
-      <Filter>dll\dpp\debug</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\libdpp-10.0.35-win64\bin\libcrypto-1_1-x64.dll">
-      <Filter>dll\dpp\debug</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\libdpp-10.0.35-win64\bin\dpp.dll">
-      <Filter>dll\dpp\debug</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\thirdparty\dpp\win64\release\libdpp-10.0.35-win64\bin\dpp.dll">
-      <Filter>dll\dpp\release</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\thirdparty\dpp\win64\release\libdpp-10.0.35-win64\bin\libcrypto-1_1-x64.dll">
-      <Filter>dll\dpp\release</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\thirdparty\dpp\win64\release\libdpp-10.0.35-win64\bin\libssl-1_1-x64.dll">
-      <Filter>dll\dpp\release</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\thirdparty\dpp\win64\release\libdpp-10.0.35-win64\bin\opus.dll">
-      <Filter>dll\dpp\release</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\thirdparty\dpp\win64\release\libdpp-10.0.35-win64\bin\zlib1.dll">
-      <Filter>dll\dpp\release</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\thirdparty\curl\win64\bin\libcurl.dll">
-      <Filter>dll\curl</Filter>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="..\src\cfg\cfg.hpp">
       <Filter>Header Files\cfg</Filter>
     </ClInclude>
@@ -147,5 +127,55 @@
     <ClInclude Include="..\src\common\lrucache.hpp">
       <Filter>Header Files\common</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="..\thirdparty\curl\win64\debug\bin\libcurl-d.dll">
+      <Filter>dll\curl\debug</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\curl\win64\debug\bin\zlibd1.dll">
+      <Filter>dll\curl\debug</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\bin\libcrypto-3-x64.dll">
+      <Filter>dll\dpp\debug</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\bin\opus.dll">
+      <Filter>dll\dpp\debug</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\bin\zlibd1.dll">
+      <Filter>dll\dpp\debug</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\sqlite3\win64\debug\bin\sqlite3.dll">
+      <Filter>dll\sqlite3\debug</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\bin\dpp.dll">
+      <Filter>dll\dpp\debug</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\bin\libssl-3-x64.dll">
+      <Filter>dll\dpp\debug</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\curl\win64\bin\libcurl.dll">
+      <Filter>dll\curl\release</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\curl\win64\bin\zlib1.dll">
+      <Filter>dll\curl\release</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\bin\dpp.dll">
+      <Filter>dll\dpp\release</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\bin\libcrypto-3-x64.dll">
+      <Filter>dll\dpp\release</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\bin\libssl-3-x64.dll">
+      <Filter>dll\dpp\release</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\bin\opus.dll">
+      <Filter>dll\dpp\release</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\bin\zlib1.dll">
+      <Filter>dll\dpp\release</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\sqlite3\win64\bin\sqlite3.dll">
+      <Filter>dll\sqlite3\release</Filter>
+    </CopyFileToFolders>
   </ItemGroup>
 </Project>

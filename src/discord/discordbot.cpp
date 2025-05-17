@@ -1,6 +1,7 @@
 #include "discordbot.hpp"
 
 #include "log/log.hpp"
+#include "common/util.hpp"
 
 const char *askChatGptCommand = "askchatgpt";
 
@@ -115,14 +116,17 @@ void discordBot::HandleOnReady(const dpp::ready_t& event){
     m_botStartedOK      = true;
     m_botThreadWaitFlag = true;
     m_botThreadWaitCV.notify_all();
+
+
 }
 
 
 void discordBot::HandleMessageEvent(const dpp::message_create_t& event){
-    std::lock_guard lock(m_eventCallbackMtx);
-
     try {
-        GetPersistence(event.msg.guild_id).RecordMessageEvent(event);
+        auto& persistenceWrapper = GetPersistence(event.msg.guild_id);
+
+        std::lock_guard lock(persistenceWrapper.mutex);
+        persistenceWrapper.persistence.RecordMessage(event.msg);
     }
     catch (const std::exception &e){
         APATE_LOG_WARN("Failed to record message event - {}", e.what());
@@ -132,7 +136,87 @@ void discordBot::HandleMessageEvent(const dpp::message_create_t& event){
     }
 }
 
-serverPersistence& discordBot::GetPersistence(const dpp::snowflake& guildID){
+void discordBot::StartArchiving(const dpp::ready_t& event){
+    return;
+    for(auto guildId:event.guilds){
+        // TO DO, USE THREAD POOL
+        std::thread t([this, guildId](){
+            std::promise<dpp::channel_map> promise;
+            auto future = promise.get_future();
+
+            m_cluster.channels_get(guildId,
+                [&promise](const dpp::confirmation_callback_t& callback){
+                    if(callback.is_error()){
+                        APATE_LOG_WARN("Failed to get channels for guild - {}", callback.get_error().message);
+                        promise.set_value({});
+                    }
+                    else if(!std::holds_alternative<dpp::channel_map>(callback.value)){
+                        APATE_LOG_WARN("Unexpected result from getting channels - {}", callback.get_error().message);
+                        promise.set_value({});
+                    }
+                    else{
+                        promise.set_value(std::get<dpp::channel_map>(callback.value));
+                    }
+                });
+
+            // wait for the channels to be retrieved
+            auto rc = future.wait_for(std::chrono::seconds(10));
+            if(rc == std::future_status::timeout){
+                APATE_LOG_WARN("Timed out waiting for channels for guild: {}", guildId.str());
+                return;
+            }
+            auto channels = future.get();
+
+            if(channels.empty()){
+                APATE_LOG_WARN("No channels found for guild: {}", guildId.str());
+                return;
+            }
+
+            for(auto& [_, channel] : channels){
+                if(channel.get_type() != dpp::channel_type::CHANNEL_TEXT){
+                    continue;
+                }
+                std::promise<dpp::message_map> messagePromise;
+                auto messagesFuture = messagePromise.get_future();
+
+                m_cluster.messages_get(channel.id, 0, SnowflakeNow (), 0,
+                                       m_OnStartFetchAmount,
+                    [&messagePromise](const dpp::confirmation_callback_t& callback){
+                        if(callback.is_error()){
+                            APATE_LOG_WARN("Failed to get message for channel - {}", callback.get_error().message);
+                            messagePromise.set_value({});
+                        }
+                        else if(!std::holds_alternative<dpp::message_map>(callback.value)){
+                            APATE_LOG_WARN("Unexpected result from getting channel messages - {}", callback.get_error().message);
+                            messagePromise.set_value({});
+                        }
+                        else{
+                            messagePromise.set_value(std::get<dpp::message_map>(callback.value));
+                        }
+                    });
+
+                auto rc = messagesFuture.wait_for(std::chrono::seconds(10));
+                if(rc == std::future_status::timeout){
+                    APATE_LOG_WARN("Timed out waiting for messages for channel: {} - {}",
+                                   channel.id.str (),
+                                   channel.name);
+                    continue;
+                }
+                auto& persistence = GetPersistence(guildId);
+                std::lock_guard lock(persistence.mutex);
+                persistence.persistence.RecordMessages(messagesFuture.get());
+
+
+            };
+        });
+        // to do, this is wrong and is undefined if the class goes out of scope
+        t.detach();
+    }
+}
+
+discordBot::serverPersistenceWrapper& discordBot::GetPersistence(const dpp::snowflake& guildID){
+    std::lock_guard lock(m_persistenceDictMtx);
+
     if(m_persistenceByGuild.count(guildID)<=0){
         std::filesystem::path guildDir = m_workingDir;
         guildDir.append(guildID.str() + "\\");
@@ -140,7 +224,7 @@ serverPersistence& discordBot::GetPersistence(const dpp::snowflake& guildID){
         serverPersistence persistence;
         persistence.SetBaseDirectory(guildDir);
 
-        auto [it,_] = m_persistenceByGuild.insert({ guildID, std::move(persistence) });
+        auto [it,_] = m_persistenceByGuild.emplace(guildID, std::move(persistence));
         return(it->second);
 
     }

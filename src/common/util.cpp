@@ -80,6 +80,10 @@ unsigned long long SnowflakeToUnix(const dpp::snowflake& flake){
     return (flake >> 22) + 1420070400000; // discord epoch starts at 2015, convert it to 1970 epoch
 }
 
+dpp::snowflake SnowflakeNow(){
+    return UnixToSnowflake(std::time(0));
+}
+
 dpp::snowflake UnixToSnowflake(const unsigned long long& unixTime){
     return (unixTime - 1420070400000) << 22;
 }
@@ -133,8 +137,7 @@ std::string ToLowercase(const std::string_view& view){
 
 size_t GetSessionToken(){
     // unique per process ran but consistent within the session
-    static int sessionToken = [](){
-        std::time(nullptr) ^ _getpid();
+    static size_t sessionToken = [](){
         return std::time(nullptr) ^ _getpid();
         }();
 

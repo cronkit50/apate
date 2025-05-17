@@ -30,6 +30,8 @@ constexpr std::size_t operator "" _zu(unsigned long long const n){
 
 unsigned long long SnowflakeToUnix(const dpp::snowflake& flake);
 
+
+dpp::snowflake SnowflakeNow();
 dpp::snowflake UnixToSnowflake(const unsigned long long& unixTime);
 
 std::string SnowflakeFriendly (const dpp::snowflake &flake);

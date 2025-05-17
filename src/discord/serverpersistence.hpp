@@ -16,12 +16,23 @@ namespace discord
 struct channelRecordFile{
     std::filesystem::path pathToFile;
     std::fstream          fStream;
+    channelRecordFile() = default;
+    channelRecordFile(channelRecordFile&) = delete;
+    channelRecordFile(channelRecordFile&&) = delete;
+    channelRecordFile& operator=(channelRecordFile&) = delete;
+    channelRecordFile& operator=(channelRecordFile&&) = delete;
+
+    ~channelRecordFile(){
+        if(fStream.is_open()){
+            fStream.close();
+        }
+    }
 
 };
 
 struct messageRecord{
 
-    messageRecord(const dpp::message_create_t& event);
+    messageRecord(const dpp::message& event);
     messageRecord(void) = default;
     dpp::snowflake snowflake;
 
@@ -45,9 +56,9 @@ public:
     void SetBaseDirectory(const std::filesystem::path &dir);
     void SetLocalMessageCacheLimit(const size_t numMessages);
 
-    void RecordMessageEvent(const dpp::message_create_t& event);
-    dpp::snowflake GetLastMessageID(const dpp::snowflake& channelID) const;
-
+    void RecordMessage(const dpp::message& msg);
+    void RecordMessages(const dpp::message_map &messages);
+    size_t GetContinuousMessages(const dpp::snowflake snowflake);
     std::vector<messageRecord> GetMessagesByChannel(const dpp::snowflake& channelID, const size_t numMessages);
     serverPersistence& swap(serverPersistence& rhs);
 
@@ -57,7 +68,7 @@ private:
 
 
     bool DoesHistoryExistForChannel(const dpp::snowflake& channelID);
-    std::shared_ptr<channelRecordFile> GetChannelFile(const dpp::message_create_t& event, const bool makeIfNotExist = true);
+    std::shared_ptr<channelRecordFile> GetChannelFile(const dpp::snowflake channelId, const bool makeIfNotExist = true);
 
     std::filesystem::path m_baseDir;
 

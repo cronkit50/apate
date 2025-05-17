@@ -5,6 +5,14 @@
     {
       "name": "curl",
       "version>=": "8.12.1"
+    },
+    {
+      "name": "sqlite3",
+      "version>=": "3.49.1"
+    },
+    {
+      "name": "dpp",
+      "version>=": "10.1.2"
     }
   ],
   "builtin-baseline": "fce5c633c8beb6e57b5d5f2476b037b798fe13f1"

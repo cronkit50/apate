@@ -23,81 +23,6 @@
     <ClCompile Include="..\src\chatgpt.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\libdpp-10.0.35-win64\bin\dpp.dll">
-      <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy \dpp.dll "$(OutDir)"</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">dpp.dll</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copying $(InputFileName)...</Message>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </DestinationFolders>
-      <DestinationFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </DestinationFileName>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\libdpp-10.0.35-win64\bin\libcrypto-1_1-x64.dll">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </DestinationFolders>
-      <DestinationFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </DestinationFileName>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\libdpp-10.0.35-win64\bin\libssl-1_1-x64.dll">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </DestinationFolders>
-      <DestinationFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </DestinationFileName>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\libdpp-10.0.35-win64\bin\opus.dll">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </DestinationFolders>
-      <DestinationFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </DestinationFileName>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\libdpp-10.0.35-win64\bin\zlib1.dll">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </DestinationFolders>
-      <DestinationFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </DestinationFileName>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\thirdparty\dpp\win64\release\libdpp-10.0.35-win64\bin\dpp.dll">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </DestinationFolders>
-      <DestinationFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </DestinationFileName>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\thirdparty\dpp\win64\release\libdpp-10.0.35-win64\bin\libcrypto-1_1-x64.dll">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </DestinationFolders>
-      <DestinationFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </DestinationFileName>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\thirdparty\dpp\win64\release\libdpp-10.0.35-win64\bin\libssl-1_1-x64.dll">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </DestinationFolders>
-      <DestinationFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </DestinationFileName>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\thirdparty\dpp\win64\release\libdpp-10.0.35-win64\bin\opus.dll">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </DestinationFolders>
-      <DestinationFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </DestinationFileName>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\thirdparty\dpp\win64\release\libdpp-10.0.35-win64\bin\zlib1.dll">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </DestinationFolders>
-      <DestinationFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </DestinationFileName>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="..\src\apate.hpp" />
     <ClInclude Include="..\src\cfg\cfg.hpp" />
     <ClInclude Include="..\src\cfg\cfgFile.hpp" />
@@ -110,8 +35,99 @@
     <ClInclude Include="..\src\log\log.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="..\thirdparty\curl\win64\bin\libcurl.dll">
+    <CopyFileToFolders Include="..\thirdparty\curl\win64\debug\bin\libcurl-d.dll">
       <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\curl\win64\debug\bin\zlibd1.dll">
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\bin\libcrypto-3-x64.dll">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\bin\opus.dll">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\bin\zlibd1.dll">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="..\thirdparty\sqlite3\win64\debug\bin\sqlite3.dll">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\bin\dpp.dll">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\debug\bin\libssl-3-x64.dll">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="..\thirdparty\curl\win64\bin\libcurl.dll">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\curl\win64\bin\zlib1.dll">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\bin\dpp.dll">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\bin\libcrypto-3-x64.dll">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\bin\libssl-3-x64.dll">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\bin\opus.dll">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\thirdparty\dpp\win64\bin\zlib1.dll">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="..\thirdparty\sqlite3\win64\bin\sqlite3.dll">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </CopyFileToFolders>
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -159,16 +175,16 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;DPP_IMPORT;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\thirdparty\dpp\win64\release\libdpp-10.0.35-win64\include\dpp-10.0;$(SolutionDir)..\submodules\json\include\;$(SolutionDir)..\submodules\curl\include\;$(SolutionDir)..\src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\thirdparty\dpp\include\;$(SolutionDir)..\thirdparty\curl\include\;$(SolutionDir)..\thirdparty\nlohmann\include\;$(SolutionDir)..\thirdparty\sqlite3\include\;$(SolutionDir)..\src</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4251</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(SolutionDir)..\thirdparty\dpp\win64\debug\libdpp-10.0.35-win64\lib\dpp-10.0\dpp.lib;$(SolutionDir)..\thirdparty\curl\win64\lib\libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)..\thirdparty\dpp\win64\debug\lib\dpp.lib;$(SolutionDir)..\thirdparty\curl\win64\debug\lib\libcurl-d.lib;$(SolutionDir)..\thirdparty\sqlite3\win64\debug\lib\sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -177,10 +193,10 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;DPP_IMPORT;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\thirdparty\dpp\win64\release\libdpp-10.0.35-win64\include\dpp-10.0;$(SolutionDir)..\submodules\json\include\;$(SolutionDir)..\submodules\curl\include\;$(SolutionDir)..\src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\thirdparty\dpp\include\;$(SolutionDir)..\thirdparty\curl\include\;$(SolutionDir)..\thirdparty\nlohmann\include\;$(SolutionDir)..\thirdparty\sqlite3\include\;$(SolutionDir)..\src</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4251</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -188,7 +204,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(SolutionDir)..\thirdparty\dpp\win64\release\libdpp-10.0.35-win64\lib\dpp-10.0\dpp.lib;$(SolutionDir)..\thirdparty\curl\win64\lib\libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)..\thirdparty\dpp\win64\lib\dpp.lib;$(SolutionDir)..\thirdparty\curl\win64\lib\libcurl.lib;$(SolutionDir)..\thirdparty\sqlite3\win64\lib\sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

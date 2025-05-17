@@ -1,31 +1,8 @@
 echo off
 
-echo ===UNPACKING DPP DEPENDENCIES===
 set DEPENDENCY_ROOT=%~dp0thirdparty
-set DPP_ROOT=%DEPENDENCY_ROOT%\dpp\
 
-rem CURRENT DPP LIBRARY IN USE - UPDATE WITH DPP AS NEEDED
-set DPP_10_0_3_5_WIN64_DEBUG=libdpp-10.0.35-win64-debug-vs2022.zip
-set DPP_10_0_3_5_WIN64_RELEASE=libdpp-10.0.35-win64-release-vs2022.zip
-
-set DPP_WIN64_DEBUG_OUT_DIR=%DPP_ROOT%win64\debug\
-set DPP_WIN64_RELEASE_OUT_DIR=%DPP_ROOT%win64\release\
-
-rem DPP TARGET FILE POINTERS
-set DPP_CURRENT_DEBUG_ZIP=%DPP_ROOT%%DPP_10_0_3_5_WIN64_DEBUG%
-set DPP_CURRENT_RELEASE_ZIP=%DPP_ROOT%%DPP_10_0_3_5_WIN64_RELEASE%
-
-if not exist %DPP_WIN64_DEBUG_OUT_DIR%\NUL (mkdir %DPP_WIN64_DEBUG_OUT_DIR%)
-if not exist %DPP_WIN64_RELEASE_OUT_DIR%)\NUL (mkdir %DPP_WIN64_RELEASE_OUT_DIR%)
-
-rem unzip the files from dpp's releases
-echo Unpacking %DPP_CURRENT_DEBUG_ZIP% to %DPP_WIN64_DEBUG_OUT_DIR%...
-powershell.exe -nologo -noprofile -command "& { $shell = New-Object -COM Shell.Application; $target = $shell.NameSpace('%DPP_WIN64_DEBUG_OUT_DIR%'); $zip = $shell.NameSpace('%DPP_CURRENT_DEBUG_ZIP%'); $target.CopyHere($zip.Items(), 16); }"
-
-echo Unpacking %DPP_CURRENT_RELEASE_ZIP% to %DPP_WIN64_RELEASE_OUT_DIR%...
-powershell.exe -nologo -noprofile -command "& { $shell = New-Object -COM Shell.Application; $target = $shell.NameSpace('%DPP_WIN64_RELEASE_OUT_DIR%'); $zip = $shell.NameSpace('%DPP_CURRENT_RELEASE_ZIP%'); $target.CopyHere($zip.Items(), 16); }"
-
-echo ===BUILDING LIBCURL...===
+echo ===INSTALLING VCPKG===
 set VCPKG_DIR=%CD%\vcpkg
 set VCPKG_INSTALLED_DIR=%CD%\VCPKG_INSTALLED\
 if not exist "%VCPKG_DIR%" (
@@ -38,7 +15,61 @@ if not exist "%VCPKG_DIR%" (
 
 %VCPKG_DIR%\vcpkg.exe install
 
-xcopy /s %VCPKG_INSTALLED_DIR%\x64-windows\bin\ %DEPENDENCY_ROOT%\curl\win64\bin\
-xcopy /s %VCPKG_INSTALLED_DIR%\x64-windows\lib\ %DEPENDENCY_ROOT%\curl\win64\lib\
+echo ===COPYING DPP RELEASE===
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\bin\dpp*" "%DEPENDENCY_ROOT%\dpp\win64\bin\"
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\bin\libcrypto*" "%DEPENDENCY_ROOT%\dpp\win64\bin\"
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\bin\zlib*" "%DEPENDENCY_ROOT%\dpp\win64\bin\"
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\bin\opus*" "%DEPENDENCY_ROOT%\dpp\win64\bin\"
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\bin\libssl*" "%DEPENDENCY_ROOT%\dpp\win64\bin\"
 
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\lib\dpp*" "%DEPENDENCY_ROOT%\dpp\win64\lib\"
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\lib\libcrypto*" "%DEPENDENCY_ROOT%\dpp\win64\lib\"
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\lib\zlib*" "%DEPENDENCY_ROOT%\dpp\win64\lib\"
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\lib\opus*" "%DEPENDENCY_ROOT%\dpp\win64\lib\"
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\lib\libssl*" "%DEPENDENCY_ROOT%\dpp\win64\lib\"
+
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\include\dpp\" "%DEPENDENCY_ROOT%\dpp\include\dpp\"
+
+echo ===COPYING DPP DEBUG===
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\debug\bin\dpp*" "%DEPENDENCY_ROOT%\dpp\win64\debug\bin\"
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\debug\bin\libcrypto*" "%DEPENDENCY_ROOT%\dpp\win64\debug\bin\"
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\debug\bin\zlib*" "%DEPENDENCY_ROOT%\dpp\win64\debug\bin\"
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\debug\bin\opus*" "%DEPENDENCY_ROOT%\dpp\win64\debug\bin\"
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\debug\bin\libssl*" "%DEPENDENCY_ROOT%\dpp\win64\debug\bin\"
+
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\debug\lib\dpp*" "%DEPENDENCY_ROOT%\dpp\win64\debug\lib\"
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\debug\lib\libcrypto*" "%DEPENDENCY_ROOT%\dpp\win64\debug\lib\"
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\debug\lib\zlib*" "%DEPENDENCY_ROOT%\dpp\win64\debug\lib\"
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\debug\lib\opus*" "%DEPENDENCY_ROOT%\dpp\win64\debug\lib\"
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\debug\lib\libssl*" "%DEPENDENCY_ROOT%\dpp\win64\debug\lib\"
+
+echo ===COPYING NLOHMANN JSON===
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\include\nlohmann\" "%DEPENDENCY_ROOT%\nlohmann\include\json\"
+
+
+echo ===COPYING LIBCURL RELEASE===
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\bin\libcurl*" "%DEPENDENCY_ROOT%\curl\win64\bin\"
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\bin\zlib*" "%DEPENDENCY_ROOT%\curl\win64\bin\"
+
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\lib\zlib*" "%DEPENDENCY_ROOT%\curl\win64\lib\"
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\lib\libcurl*" "%DEPENDENCY_ROOT%\curl\win64\lib\"
+
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\include\curl\" "%DEPENDENCY_ROOT%\curl\include\curl\"
+
+echo ===COPYING LIBCURL DEBUG===
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\debug\bin\libcurl*" "%DEPENDENCY_ROOT%\curl\win64\debug\bin\"
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\debug\bin\zlib*" "%DEPENDENCY_ROOT%\curl\win64\debug\bin\"
+
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\debug\lib\zlib*" "%DEPENDENCY_ROOT%\curl\win64\debug\lib\"
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\debug\lib\libcurl*" "%DEPENDENCY_ROOT%\curl\win64\debug\lib\"
+
+echo ===COPYING SQLITE3 RELEASE===
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\bin\sqlite*" "%DEPENDENCY_ROOT%\sqlite3\win64\bin\"
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\lib\sqlite*" "%DEPENDENCY_ROOT%\sqlite3\win64\lib\"
+
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\include\sqlite*" "%DEPENDENCY_ROOT%\sqlite3\include\sqlite3\"
+
+echo ===COPYING SQLITE3 DEBUG===
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\debug\bin\sqlite*" "%DEPENDENCY_ROOT%\sqlite3\win64\debug\bin\"
+xcopy /s "%VCPKG_INSTALLED_DIR%\x64-windows\debug\lib\sqlite*" "%DEPENDENCY_ROOT%\sqlite3\win64\debug\lib\"
 pause
