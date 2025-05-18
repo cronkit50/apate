@@ -85,7 +85,7 @@ dpp::snowflake SnowflakeNow(){
 }
 
 dpp::snowflake UnixToSnowflake(const unsigned long long& unixTime){
-    return (unixTime - 1420070400000) << 22;
+    return ((unixTime * 1000) - 1420070400000) << 22;
 }
 
 std::string SnowflakeFriendly(const dpp::snowflake& flake){

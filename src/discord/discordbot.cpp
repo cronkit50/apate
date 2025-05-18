@@ -117,6 +117,8 @@ void discordBot::HandleOnReady(const dpp::ready_t& event){
     m_botThreadWaitFlag = true;
     m_botThreadWaitCV.notify_all();
 
+    StartArchiving(event);
+
 
 }
 
@@ -126,7 +128,7 @@ void discordBot::HandleMessageEvent(const dpp::message_create_t& event){
         auto& persistenceWrapper = GetPersistence(event.msg.guild_id);
 
         std::lock_guard lock(persistenceWrapper.mutex);
-        persistenceWrapper.persistence.RecordMessage(event.msg);
+        persistenceWrapper.persistence.RecordLatestMessage(event.msg);
 
     }
     catch (const std::exception &e){
@@ -138,26 +140,33 @@ void discordBot::HandleMessageEvent(const dpp::message_create_t& event){
 }
 
 void discordBot::StartArchiving(const dpp::ready_t& event){
-    return;
-    for(auto guildId:event.guilds){
+
+
+    for(auto guildId : event.guilds){
         // TO DO, USE THREAD POOL
         std::thread t([this, guildId](){
-            std::promise<dpp::channel_map> promise;
-            auto future = promise.get_future();
+
+
+            APATE_LOG_WARN("Starting archiver thread for guild: {}", guildId.str());
+
+            auto promise = std::make_shared<std::promise<dpp::channel_map>> ();
+            auto future = promise->get_future();
 
             m_cluster.channels_get(guildId,
-                [&promise](const dpp::confirmation_callback_t& callback){
+                [promise](const dpp::confirmation_callback_t& callback){
                     if(callback.is_error()){
                         APATE_LOG_WARN("Failed to get channels for guild - {}", callback.get_error().message);
-                        promise.set_value({});
+                        promise->set_value({});
                     }
                     else if(!std::holds_alternative<dpp::channel_map>(callback.value)){
                         APATE_LOG_WARN("Unexpected result from getting channels - {}", callback.get_error().message);
-                        promise.set_value({});
+                        promise->set_value({});
                     }
                     else{
-                        promise.set_value(std::get<dpp::channel_map>(callback.value));
+                        promise->set_value(std::get<dpp::channel_map>(callback.value));
                     }
+
+                    APATE_LOG_INFO ("TEST!!!");
                 });
 
             // wait for the channels to be retrieved
@@ -177,37 +186,85 @@ void discordBot::StartArchiving(const dpp::ready_t& event){
                 if(channel.get_type() != dpp::channel_type::CHANNEL_TEXT){
                     continue;
                 }
-                std::promise<dpp::message_map> messagePromise;
-                auto messagesFuture = messagePromise.get_future();
 
-                m_cluster.messages_get(channel.id, 0, SnowflakeNow (), 0,
-                                       m_OnStartFetchAmount,
-                    [&messagePromise](const dpp::confirmation_callback_t& callback){
-                        if(callback.is_error()){
-                            APATE_LOG_WARN("Failed to get message for channel - {}", callback.get_error().message);
-                            messagePromise.set_value({});
-                        }
-                        else if(!std::holds_alternative<dpp::message_map>(callback.value)){
-                            APATE_LOG_WARN("Unexpected result from getting channel messages - {}", callback.get_error().message);
-                            messagePromise.set_value({});
-                        }
-                        else{
-                            messagePromise.set_value(std::get<dpp::message_map>(callback.value));
-                        }
-                    });
+                size_t numContinuousMessages = 0;
+                bool   firstFetch = true;
 
-                auto rc = messagesFuture.wait_for(std::chrono::seconds(10));
-                if(rc == std::future_status::timeout){
-                    APATE_LOG_WARN("Timed out waiting for messages for channel: {} - {}",
-                                   channel.id.str (),
-                                   channel.name);
-                    continue;
+                dpp::snowflake archiveBeginTime = SnowflakeNow();
+                dpp::snowflake currFetchTime        = archiveBeginTime;
+                while(numContinuousMessages < m_chatGPTMessageContextRequirement){
+
+                    size_t fetchBatchSize = (firstFetch) ? m_OnStartFetchAmount : m_ContinousFetchAmount;
+
+                    auto messagePromise = std::make_shared<std::promise<dpp::message_map>>();
+                    auto messagesFuture = messagePromise->get_future();
+
+                    m_cluster.messages_get(channel.id, 0, currFetchTime, 0,
+                                           fetchBatchSize,
+
+                        [messagePromise, &channel](const dpp::confirmation_callback_t& callback){
+                            if(callback.is_error()){
+                                APATE_LOG_WARN("Failed to get message for channel {} {} - {}",
+                                                channel.id.str(),
+                                                channel.name,
+                                                callback.get_error().message);
+                                messagePromise->set_value({});
+                            }
+                            else if(!std::holds_alternative<dpp::message_map>(callback.value)){
+                                APATE_LOG_WARN("Unexpected result from getting channel {} {} messages - {}",
+                                                channel.id.str(),
+                                                channel.name,
+                                                callback.get_error().message);
+                                messagePromise->set_value({});
+                            }
+                            else{
+                                messagePromise->set_value(std::get<dpp::message_map>(callback.value));
+                            }
+                        });
+
+                    auto rc = messagesFuture.wait_for(std::chrono::seconds(10));
+                    if(rc == std::future_status::timeout){
+                        APATE_LOG_WARN("Failred to get messages for channel: {} - {}",
+                                        channel.id.str(),
+                                        channel.name);
+                        continue;
+                    }
+
+                    auto& persistence = GetPersistence(guildId);
+                    std::lock_guard lock(persistence.mutex);
+
+                    auto msgs = messagesFuture.get();
+
+                    persistence.persistence.RecordLatestMessages(msgs);
+
+
+                    numContinuousMessages = persistence.persistence.CountContinuousMessages(channel.id, archiveBeginTime);
+
+                    APATE_LOG_DEBUG("Logging '{}' messages for channel {} {} - num continuous {}",
+                                    msgs.size(),
+                                    channel.id.str(),
+                                    channel.name,
+                                    numContinuousMessages);
+
+
+                    dpp::snowflake oldestMessage = SnowflakeNow ();
+                    for(const auto& [_, msg] : msgs){
+                        oldestMessage = std::min(currFetchTime, msg.id);
+                    }
+
+                    if(msgs.size () < fetchBatchSize){
+                        APATE_LOG_INFO("No more messages for channel {} {}. Has '{}' continuous messages.",
+                                       channel.id.str(),
+                                       channel.name,
+                                       numContinuousMessages);
+                        break;
+                    }
+
+                    currFetchTime = oldestMessage;
+
+
+                    firstFetch = false;
                 }
-                auto& persistence = GetPersistence(guildId);
-                std::lock_guard lock(persistence.mutex);
-                persistence.persistence.RecordMessages(messagesFuture.get());
-
-
             };
         });
         // to do, this is wrong and is undefined if the class goes out of scope

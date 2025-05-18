@@ -37,12 +37,17 @@ struct messageRecord{
 
 struct persistenceDatabase{
 
+private:
+    typedef std::pair<dpp::snowflake, dpp::snowflake> rangePair;
+
+public:
+
     typedef int sql_rc;
 
     std::string databaseName;
     std::string databaseFile;
 
-    sqlite3 *db = nullptr;
+
 
     persistenceDatabase(void) = default;
     persistenceDatabase(const std::filesystem::path &pathToDb);
@@ -57,16 +62,31 @@ struct persistenceDatabase{
     persistenceDatabase& operator=(persistenceDatabase&) = delete;
     persistenceDatabase& operator=(persistenceDatabase&&) = delete;
 
-    persistenceDatabase& operator<<(const messageRecord& message);
+    sql_rc StoreContinousMessages(const std::vector<messageRecord>& messages, const dpp::snowflake lastMessageId = {});
+    sql_rc StoreContinousMessage(const messageRecord& message, const dpp::snowflake lastMessageId = {});
 
     sql_rc GetLatestMessagesByChannel(const dpp::snowflake channelId, const size_t numMessages, std::vector<messageRecord> &message);
 
+    size_t GetContinuousMessages(const dpp::snowflake channelId, const dpp::snowflake since);
     ~persistenceDatabase();
 
 private:
-    sql_rc CreateChannelMessagesTable(const dpp::snowflake channelId);
-    std::string GetTableName(const dpp::snowflake channelId) const;
 
+
+    persistenceDatabase& operator<<(const messageRecord& message);
+    persistenceDatabase& operator<<(const std::vector<messageRecord> &messages);
+
+
+    sqlite3 *m_sqlite3_db = nullptr;
+
+    rangePair ComputeMessageRange (const std::vector<messageRecord>& messages, const dpp::snowflake lastMessageId = {});
+    std::vector<rangePair> FetchOverlappingRanges(const std::string tableName, const rangePair &range);
+    void DeleteContinuityEntry(const std::string tableName, const dpp::snowflake entry);
+    void CreateContinuityEntry(const std::string tableName, const rangePair &range);
+
+    sql_rc CreateChannelTables(const dpp::snowflake channelId);
+    std::string GetMessagesTableName(const dpp::snowflake channelId) const;
+    std::string GetContinuityTrackTableName(const dpp::snowflake channelId) const;
 };
 
 
@@ -81,9 +101,15 @@ public:
 
     void SetBaseDirectory(const std::filesystem::path &dir);
 
-    void RecordMessage(const dpp::message& msg);
-    void RecordMessages(const dpp::message_map &messages);
-    size_t GetContinuousMessages(const dpp::snowflake snowflake);
+    void RecordLatestMessage(const dpp::message& msg);
+    void RecordLatestMessages(const dpp::message_map &messages);
+    void RecordLatestMessages(const dpp::snowflake channelId, const std::vector<messageRecord> &messages);
+
+    void RecordOldMessagesContinuous(const dpp::snowflake channelId, const std::vector<messageRecord> &messages);
+    void RecordOldMessagesContinuous(const dpp::message_map &messages);
+
+    size_t CountContinuousMessages(const dpp::snowflake channelId, const dpp::snowflake since);
+
     std::vector<messageRecord> GetMessagesByChannel(const dpp::snowflake& channelID, const size_t numMessages);
     serverPersistence& swap(serverPersistence& rhs);
 
@@ -94,6 +120,7 @@ private:
 
     std::filesystem::path m_baseDir;
 
+    std::map<dpp::snowflake, dpp::snowflake> m_latestMessageByChannel;
 
     std::shared_ptr<persistenceDatabase> m_persistenceDatabase;
 };

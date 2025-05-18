@@ -79,6 +79,8 @@ private:
     std::filesystem::path m_workingDir;
 
     size_t m_OnStartFetchAmount = 5;
+    size_t m_ContinousFetchAmount = 50;
+    size_t m_chatGPTMessageContextRequirement = 25;
 };
 }
 
