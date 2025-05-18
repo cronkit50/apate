@@ -32,6 +32,7 @@ struct messageRecord{
 
     std::string authorGlobalName;
     std::string authorUserName;
+    dpp::snowflake authorId;
 };
 
 

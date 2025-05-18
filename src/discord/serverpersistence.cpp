@@ -89,11 +89,13 @@ persistenceDatabase& persistenceDatabase::operator<<(const messageRecord& messag
 
     sqlite3_stmt* stmt = nullptr;
 
-    std::string sql = std::format("INSERT OR IGNORE INTO {} (snowflake, channelsnowflake, authorUserName, authorGlobalName, timeStampUnixMs, timeStampFriendly, message) "
-                                  "VALUES ({}, {}, ?, ?, {}, '{}', ?);",
+    std::string sql = std::format("INSERT OR IGNORE INTO {} (snowflake, channelsnowflake, authorUserName, authorGlobalName, authorId, timeStampUnixMs, timeStampFriendly, message) "
+                                  "VALUES ({}, {}, ?, ?, {}, {}, '{}', ?);",
                                   tableName,
+
                                   message.snowflake.str(),
                                   message.channelId.str(),
+                                  message.authorId.str(),
                                   message.timeStampUnixMs,
                                   message.timeStampFriendly);
 
@@ -354,9 +356,10 @@ discord::persistenceDatabase::sql_rc persistenceDatabase::GetLatestMessagesByCha
                 msg.channelId         = dpp::snowflake(std::stoull(argv[1]));
                 msg.authorUserName    = argv[2];
                 msg.authorGlobalName  = argv[3];
-                msg.timeStampUnixMs   = std::stoll(argv[4]);
-                msg.timeStampFriendly = argv[5];
-                msg.message           = argv[6];
+                msg.authorId          = dpp::snowflake(std::stoull(argv[4]));
+                msg.timeStampUnixMs   = std::stoll(argv[5]);
+                msg.timeStampFriendly = argv[6];
+                msg.message           = argv[7];
 
                 messages->push_back(msg);
 
@@ -487,6 +490,7 @@ discord::persistenceDatabase::sql_rc persistenceDatabase::CreateChannelTables(co
                                                       "channelsnowflake INTEGER NOT NULL,"
                                                       "authorUserName TEXT NOT NULL,"
                                                       "authorGlobalName TEXT NOT NULL,"
+                                                      "authorId INTEGER NOT NULL,"
                                                       "timeStampUnixMs INTEGER NOT NULL,"
                                                       "timeStampFriendly TEXT NOT NULL,"
                                                       "message TEXT);",
@@ -537,6 +541,7 @@ messageRecord::messageRecord(const dpp::message& msg){
     timeStampFriendly = SnowflakeFriendly(snowflake);
     authorGlobalName = msg.author.global_name;
     authorUserName = msg.author.username;
+    authorId = msg.author.id;
 }
 
 
