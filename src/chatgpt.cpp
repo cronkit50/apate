@@ -113,11 +113,12 @@ nlohmann::json chatGPTPrompt::JsonRequest(void) const{
     json["model"] = model.modelValue;
     json["instructions"] = systemPrompt;
 
+    // oldest first.
     for (size_t ii = 0; ii < history.size(); ii++){
 
         const auto &msg = history[ii];
-        json["input"][ii + 1]["role"] = (ROLE_USER == msg.role) ? "user" : "assistant";
-        json["input"][ii + 1]["content"] = msg.message;
+        json["input"][ii]["role"] = (ROLE_USER == msg.role) ? "user" : "assistant";
+        json["input"][ii]["content"] = msg.message;
     }
 
     size_t lastMessage = json["input"].size();
@@ -218,6 +219,7 @@ chatGPT::~chatGPT(){
 std::future<chatGPTResponse> chatGPT::AskChatGPTAsync(const chatGPTPrompt& prompt){
     chatGPTDispatchRequest toDispatch;
     toDispatch.json    = prompt.JsonRequest();
+
     auto future        = toDispatch.promise.get_future();
 
     std::lock_guard lock(m_dispatchQMtx);
@@ -257,6 +259,10 @@ void chatGPT::HandleQueue(void){
         headers = curl_slist_append(headers, ("Authorization: Bearer " + m_openAI_Key).c_str());
 
         std::string requestDataStr = request.json.dump();
+
+        APATE_LOG_DEBUG(requestDataStr);
+
+
         std::string curlResponse;
 
         curl_easy_setopt(m_curl, CURLOPT_URL, openAI_API_URL);

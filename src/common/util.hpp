@@ -44,4 +44,6 @@ std::string ToLowercase (const std::string_view &view);
 
 size_t GetSessionToken();
 
+bool ContainsCaseInsensitive(const std::string_view& str1, const std::string_view& str2);
+
 #endif

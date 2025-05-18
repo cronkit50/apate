@@ -317,7 +317,6 @@ discord::persistenceDatabase::sql_rc persistenceDatabase::StoreContinousMessage(
 
 discord::persistenceDatabase::sql_rc persistenceDatabase::GetLatestMessagesByChannel(const dpp::snowflake channelId, const size_t numMessages, std::vector<messageRecord> &message){
 
-
     std::vector<messageRecord> messages;
 
     if(!numMessages){
@@ -337,45 +336,44 @@ discord::persistenceDatabase::sql_rc persistenceDatabase::GetLatestMessagesByCha
                                   GetMessagesTableName(channelId),
                                   numMessages);
 
-    if(rc = CreateChannelTables(channelId) != SQLITE_OK){
+    if((rc = CreateChannelTables(channelId)) != SQLITE_OK){
         APATE_LOG_WARN("{} - Failed to create table for channel {} - {}",
                        databaseFile,
                        channelId.str(),
                        sqlite3_errstr(rc));
     }
-    else if (rc = (sqlite3_exec(m_sqlite3_db,
-                                sql.c_str(),
-                                [](void* data, int argc, char** argv, char** azColName){
-                                    std::vector<messageRecord>* messages = static_cast<std::vector<messageRecord>*>(data);
+    else if ((rc = sqlite3_exec(m_sqlite3_db,
+        sql.c_str(),
+        [](void* data, int argc, char** argv, char** azColName){
+            std::vector<messageRecord>* messages = static_cast<std::vector<messageRecord>*>(data);
 
-                                    try {
-                                        messageRecord msg;
-                                        msg.snowflake         = dpp::snowflake(std::stoull(argv[0]));
-                                        msg.channelId         = dpp::snowflake(std::stoull(argv[1]));
-                                        msg.authorUserName    = argv[2];
-                                        msg.authorGlobalName  = argv[3];
-                                        msg.timeStampUnixMs   = std::stoll(argv[4]);
-                                        msg.timeStampFriendly = argv[5];
-                                        msg.message           = argv[6];
+            APATE_LOG_DEBUG ("FETCHED!");
+            try {
+                messageRecord msg;
+                msg.snowflake         = dpp::snowflake(std::stoull(argv[0]));
+                msg.channelId         = dpp::snowflake(std::stoull(argv[1]));
+                msg.authorUserName    = argv[2];
+                msg.authorGlobalName  = argv[3];
+                msg.timeStampUnixMs   = std::stoll(argv[4]);
+                msg.timeStampFriendly = argv[5];
+                msg.message           = argv[6];
 
-                                        messages->push_back(msg);
-
-                                    } catch(const std::exception& e){
-                                        APATE_LOG_WARN("Failed to parse message from sqlite3 database - {}",
-                                                       e.what());
-                                    } catch(...){
-                                        APATE_LOG_WARN("Failed to parse message from sqlite3 database - unknown exception");
-                                    }
-
-                                    return 0;
-                                },
-                                &messages, nullptr) != SQLITE_OK)){
+                messages->push_back(msg);
 
 
+            } catch(const std::exception& e){
+                APATE_LOG_WARN("Failed to parse message from sqlite3 database - {}",
+                                e.what());
+            } catch(...){
+                APATE_LOG_WARN("Failed to parse message from sqlite3 database - unknown exception");
+            }
+
+            return 0;
+        }, &messages, nullptr)) != SQLITE_OK){
         APATE_LOG_WARN("{} - Failed to get messages from sqlite3 database {} - {}",
                         databaseFile,
                        sqlite3_errmsg(m_sqlite3_db));
-        }
+    }
 
     if (SQLITE_OK == rc){
         message = messages;
@@ -679,12 +677,12 @@ size_t serverPersistence::CountContinuousMessages(const dpp::snowflake channelId
 }
 
 
-std::vector<messageRecord> serverPersistence::GetMessagesByChannel(const dpp::snowflake& channelID, const size_t numMessages){
+std::vector<messageRecord> serverPersistence::GetContinousMessagesByChannel(const dpp::snowflake& channelID, const size_t numMessages){
 
     std::shared_ptr<persistenceDatabase> channelFile = GetDbHandle();
     std::vector<messageRecord> messages;
 
-    if(nullptr==channelFile){
+    if(!channelFile){
         APATE_LOG_WARN("Failed to get database handle for channel {}", channelID.str());
     }
     else{
@@ -712,7 +710,7 @@ serverPersistence& serverPersistence::swap(serverPersistence& rhs){
 
 
 bool serverPersistence::DoesHistoryExistForChannel(const dpp::snowflake& channelID){
-    return !GetMessagesByChannel(channelID, 1).empty();
+    return !GetContinousMessagesByChannel(channelID, 1).empty();
 }
 
 std::shared_ptr<persistenceDatabase> serverPersistence::GetDbHandle(const bool makeIfNotExist){

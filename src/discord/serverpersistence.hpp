@@ -110,7 +110,7 @@ public:
 
     size_t CountContinuousMessages(const dpp::snowflake channelId, const dpp::snowflake since);
 
-    std::vector<messageRecord> GetMessagesByChannel(const dpp::snowflake& channelID, const size_t numMessages);
+    std::vector<messageRecord> GetContinousMessagesByChannel(const dpp::snowflake& channelID, const size_t numMessages);
     serverPersistence& swap(serverPersistence& rhs);
 
 private:

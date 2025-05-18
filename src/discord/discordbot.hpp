@@ -13,7 +13,8 @@
 #include <mutex>
 #include <thread>
 
-#define DEFAULT_AI_MODEL "o4-mini"
+#define DEFAULT_AI_MODEL      "o4-mini"
+#define DEFAULT_AI_MODEL_FAST "gpt-3.5-turbo"
 
 namespace discord
 {
@@ -81,6 +82,7 @@ private:
     size_t m_OnStartFetchAmount = 5;
     size_t m_ContinousFetchAmount = 50;
     size_t m_chatGPTMessageContextRequirement = 25;
+    size_t m_chatGPTPrefilterContextRequirement = 25;
 };
 }
 

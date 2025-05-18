@@ -143,3 +143,19 @@ size_t GetSessionToken(){
 
     return (size_t)sessionToken;
 }
+
+bool ContainsCaseInsensitive(const std::string_view& str1, const std::string_view& str2){
+    if(str1.length() < str2.length()){
+        return false;
+    }
+
+    size_t numCharsCmp = str2.length ();
+
+    for(size_t i = 0; i < numCharsCmp; ++i){
+        if(std::tolower(str1[i]) != std::tolower(str2[i])){
+            return false;
+        }
+    }
+
+    return true;
+}
