@@ -7,20 +7,23 @@ model = SentenceTransformer("sentence-transformers/all-mpnet-base-v2")
 @app.route("/embed", methods=["POST"])
 def embed():
     try:
-        text = request.json["text"]
-        print("sentence transform request received for: " + text)
+        textList = request.json["texts"]
         
-        embedding = model.encode(text)
+        if not isinstance(textList, list):
+            # Bad Request
+            return jsonify({"error": "'texts' must be a list of strings"}), 400
+        
+        embeddings = model.encode(textList)
+        
+        print ("encoded data")
         
         return jsonify({
-            "embedding": embedding.tolist()
+            "embedding": [embeddings.tolist() for embedding in embeddings]
         })
     except Exception as e:
         print("Exception raised on flask server:", str(e))
-        return jsonify({"error": str(e)}), 500  # Internal Server Error
-    
-    return jsonify({
-        "embedding": embedding.tolist()
-    })
+
+        # Internal Server Error
+        return jsonify({"error": str(e)}), 500
 
 app.run(port=5000)

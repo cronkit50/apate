@@ -467,6 +467,122 @@ size_t persistenceDatabase::GetContinuousMessages(const dpp::snowflake channelId
 
 
 }
+dpp::snowflake persistenceDatabase::GetOldestContinuousTimestamp(const dpp::snowflake channelId, const dpp::snowflake since){
+    dpp::snowflake snowflake = since;
+
+    if(!IsOpen()){
+        APATE_LOG_WARN("sqlite3 database {} is not open",
+                       databaseFile);
+    }
+    std::string tableName = GetContinuityTrackTableName(channelId);
+
+    std::string sql = std::format("SELECT snowflakeBegin FROM {} WHERE snowflakeBegin <= {} AND snowflakeEnd >= {}",
+                                  tableName,
+                                  since.str(),
+                                  since.str());
+
+    if(sqlite3_exec(m_sqlite3_db, sql.c_str(), [](void* data, int argc, char** argv, char** azColName){
+        dpp::snowflake* snowflake = static_cast<dpp::snowflake*>(data);
+        try{
+            *snowflake = dpp::snowflake(std::stoull(argv[0]));
+
+        } catch(const std::exception& e){
+            APATE_LOG_WARN("{} - Failed to parse message from sqlite3 database - {}",
+                           e.what());
+        } catch(...){
+            APATE_LOG_WARN("Failed to parse message from sqlite3 database - unknown exception");
+        }
+        return 0;
+       }, &snowflake, nullptr) != SQLITE_OK){
+        APATE_LOG_WARN("{} - Failed to get continuity ranges from {} - {}",
+                       databaseFile,
+                       tableName,
+                       sqlite3_errmsg(m_sqlite3_db));
+    }
+
+    return snowflake;
+}
+persistenceDatabase::sql_rc persistenceDatabase::StoreEmbedding(const dpp::snowflake channelId, const dpp::snowflake messageId, std::vector<float>& embedding){
+    if(embedding.empty()){
+        return SQLITE_OK;
+    }
+
+    if(!IsOpen()){
+        APATE_LOG_WARN("sqlite3 database {} is not open",
+                       databaseFile);
+        return SQLITE_INTERNAL;
+    }
+
+    std::string tableName = GetEmbeddingsTableName(channelId);
+    CreateChannelTables(channelId);
+    std::string sql = std::format("INSERT OR IGNORE INTO {} (snowflake, embedding) VALUES ({}, ?);",
+                                  tableName,
+                                  messageId.str());
+
+    sql_rc rc = SQLITE_OK;
+
+    sqlite3_stmt* stmt = nullptr;
+    if((rc = sqlite3_prepare_v2(m_sqlite3_db, sql.c_str(), -1, &stmt, NULL)) != SQLITE_OK){
+        APATE_LOG_WARN("{} - Failed to prepare statement for message {} - {}",
+                       databaseFile,
+                       messageId.str(),
+                       sqlite3_errmsg(m_sqlite3_db));
+    }
+    // save the embeddings vector as memory continguous blob
+    else if((rc = sqlite3_bind_blob(stmt, 1, embedding.data(), (int)embedding.size()*sizeof(float), SQLITE_TRANSIENT)) != SQLITE_OK){
+        APATE_LOG_WARN("{} - sqlite3_bind_blob() failed {} - {}",
+                       databaseFile,
+                       messageId.str(),
+                       sqlite3_errmsg(m_sqlite3_db));
+    }
+    else{
+        while(sqlite3_step(stmt) == SQLITE_ROW){
+            // process each row
+        }
+        if(sqlite3_errcode(m_sqlite3_db) != SQLITE_DONE){
+            APATE_LOG_WARN("{} - Failed to insert message {} into {} - {}",
+                           databaseFile,
+                           messageId.str(),
+                           tableName,
+                           sqlite3_errmsg(m_sqlite3_db));
+        }
+
+        if(sqlite3_finalize(stmt)!=SQLITE_OK){
+            APATE_LOG_WARN("{} - Failed to finalize statement for message {} - {}",
+                           databaseFile,
+                           sqlite3_errmsg(m_sqlite3_db));
+        }
+    }
+
+    return rc;
+}
+
+bool persistenceDatabase::HasEmbedding(const dpp::snowflake channelId, const dpp::snowflake messageId){
+    if(!IsOpen()){
+        APATE_LOG_WARN("sqlite3 database {} is not open",
+                       databaseFile);
+        return false;
+    }
+
+    std::string tableName = GetEmbeddingsTableName(channelId);
+    CreateChannelTables(channelId);
+    std::string sql = std::format("SELECT COUNT(*) FROM {} WHERE snowflake = {}",
+                                  tableName,
+                                  messageId.str());
+    size_t num = 0;
+    if(sqlite3_exec(m_sqlite3_db, sql.c_str(), [](void* data, int argc, char** argv, char** azColName){
+        size_t* num = static_cast<size_t*>(data);
+
+        return 0;
+       }, &num, nullptr) != SQLITE_OK){
+        APATE_LOG_WARN("{} - Failed to get messages from sqlite3 database {} - {}",
+                       databaseFile,
+                       tableName,
+                       sqlite3_errmsg(m_sqlite3_db));
+    }
+    return (num > 0);
+
+}
 persistenceDatabase::~persistenceDatabase(){
     try{
         Close();
@@ -476,7 +592,7 @@ persistenceDatabase::~persistenceDatabase(){
     }
 }
 
-discord::persistenceDatabase::sql_rc persistenceDatabase::CreateChannelTables(const dpp::snowflake channelId){
+persistenceDatabase::sql_rc persistenceDatabase::CreateChannelTables(const dpp::snowflake channelId){
     if(channelId.empty()){
         APATE_LOG_DEBUG("Channel ID is empty");
         return SQLITE_ERROR;
@@ -502,6 +618,12 @@ discord::persistenceDatabase::sql_rc persistenceDatabase::CreateChannelTables(co
                                                                "snowflakeEnd INTEGER NOT NULL)",
                                                                 GetContinuityTrackTableName(channelId));
 
+
+    const std::string createEmbeddingsTableSQL = std::format ("CREATE TABLE IF NOT EXISTS {} ("
+                                                              "snowflake INTEGER PRIMARY KEY,"
+                                                              "embedding BLOB)",
+                                                              GetEmbeddingsTableName(channelId));
+
     if(rc = sqlite3_exec(m_sqlite3_db, createMsgTableSQL.c_str(), NULL, NULL, &errMsg) != SQLITE_OK){
 
         APATE_LOG_WARN("sqlite3_exec({}) failed - {}",
@@ -509,12 +631,19 @@ discord::persistenceDatabase::sql_rc persistenceDatabase::CreateChannelTables(co
                        sqlite3_errmsg(m_sqlite3_db));
 
         sqlite3_free(errMsg);
-    } else if(rc = sqlite3_exec(m_sqlite3_db, createContinuityTableSQL.c_str(), NULL, NULL, &errMsg) != SQLITE_OK){
+    }
+    else if(rc = sqlite3_exec(m_sqlite3_db, createContinuityTableSQL.c_str(), NULL, NULL, &errMsg) != SQLITE_OK){
 
         APATE_LOG_WARN("sqlite3_exec({}) failed - {}",
                        createContinuityTableSQL,
                        sqlite3_errmsg(m_sqlite3_db));
 
+        sqlite3_free(errMsg);
+    }
+    else if(rc = sqlite3_exec(m_sqlite3_db, createEmbeddingsTableSQL.c_str(), NULL, NULL, &errMsg) != SQLITE_OK){
+        APATE_LOG_WARN("sqlite3_exec({}) failed - {}",
+                       createEmbeddingsTableSQL,
+                       sqlite3_errmsg(m_sqlite3_db));
         sqlite3_free(errMsg);
     }
 
@@ -530,6 +659,11 @@ std::string persistenceDatabase::GetMessagesTableName(const dpp::snowflake chann
 std::string persistenceDatabase::GetContinuityTrackTableName(const dpp::snowflake channelId) const{
     std::string tableName = "continuity_" + channelId.str ();
     return tableName;
+}
+
+std::string persistenceDatabase::GetEmbeddingsTableName(const dpp::snowflake channelId) const{
+    std::string embeddingName = "embeddings_" + channelId.str ();
+    return embeddingName;
 }
 
 
@@ -679,6 +813,58 @@ size_t serverPersistence::CountContinuousMessages(const dpp::snowflake channelId
     }
 
     return num;
+}
+
+void serverPersistence::SaveEmbedding(const dpp::snowflake channelId, const dpp::snowflake messageId, std::vector<float>& embedding){
+    if (embedding.empty ()){
+        return;
+    }
+
+    std::shared_ptr<persistenceDatabase> channelFile = GetDbHandle();
+    if(!channelFile){
+        APATE_LOG_WARN("Failed to get database handle for channel {}", channelId.str());
+    }
+    else{
+        persistenceDatabase::sql_rc rc = channelFile->StoreEmbedding(channelId, messageId, embedding);
+        if(rc!=SQLITE_OK){
+            APATE_LOG_WARN("Failed to save embedding for message {} in channel {} - {}",
+                           messageId.str(),
+                           channelId.str(),
+                           sqlite3_errstr(rc));
+        }
+    }
+}
+
+bool serverPersistence::HasEmbedding(const dpp::snowflake channelId, const dpp::snowflake messageId){
+    std::shared_ptr<persistenceDatabase> channelFile = GetDbHandle();
+    if(!channelFile){
+        APATE_LOG_WARN("Failed to get database handle for channel {}", channelId.str());
+        return false;
+    }
+
+    return channelFile->HasEmbedding(channelId, messageId);
+}
+
+dpp::snowflake serverPersistence::GetOldestContinuousTimestamp(const dpp::snowflake channelId, const dpp::snowflake since){
+    dpp::snowflake snowflake = since;
+    std::shared_ptr<persistenceDatabase> channelFile = GetDbHandle();
+    if(!channelFile){
+        APATE_LOG_WARN("Failed to get database handle for channel {}", channelId.str());
+    }
+    else{
+
+        dpp::snowflake sinceActual = since;
+
+        if (m_latestMessageByChannel.count(channelId)){
+
+            // the latest message is older than since so we just want to know the # of continuous messages
+            // since the latest.
+            sinceActual = std::min(since, m_latestMessageByChannel.at(channelId));
+        }
+
+        snowflake = channelFile->GetOldestContinuousTimestamp(channelId, sinceActual);
+    }
+    return snowflake;
 }
 
 

@@ -3,10 +3,10 @@
 
 #include <future>
 #include <vector>
+typedef std::vector<std::vector<float>> Embeddings;
 
-std::future<std::vector<float>> TransformSentence(const std::string_view message,
-                                                  const std::string_view server = "127.0.0.1",
-                                                  int port = 5000);
-
+std::future<Embeddings> TransformSentences(const std::vector<std::string> &messages,
+                                           const std::string_view server = "127.0.0.1",
+                                           int port = 5000);
 
 #endif

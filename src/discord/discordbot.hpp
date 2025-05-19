@@ -1,7 +1,7 @@
 #ifndef DISCORDBOT_HPP
 #define DISCORDBOT_HPP
 
-#include <discord/serverpersistence.hpp>
+#include "discord/messagearchiver.hpp"
 
 #include <dpp/cluster.h>
 
@@ -20,21 +20,6 @@ namespace discord
 {
 class discordBot
 {
-private:
-    struct serverPersistenceWrapper{
-        serverPersistenceWrapper() = default;
-        serverPersistenceWrapper(serverPersistenceWrapper&) = delete;
-        serverPersistenceWrapper(serverPersistence&& rhs){
-            persistence = std::move(rhs);
-        }
-        serverPersistenceWrapper& operator=(serverPersistenceWrapper&) = delete;
-        serverPersistenceWrapper& operator=(serverPersistenceWrapper&& rhs){
-            persistence = std::move(rhs.persistence);
-            return *this;
-        }
-        serverPersistence persistence;
-        std::mutex        mutex;
-    };
 
 public:
     discordBot(const std::string& discordAPIToken);
@@ -59,8 +44,6 @@ private:
 
     void StartArchiving(const dpp::ready_t& event);
 
-    serverPersistenceWrapper& GetPersistence(const dpp::snowflake& guildID);
-
     std::string  m_model = DEFAULT_AI_MODEL;
 
 
@@ -72,17 +55,17 @@ private:
     std::mutex              m_botThreadWaitMtx;
     std::condition_variable m_botThreadWaitCV;
 
-    std::mutex              m_persistenceDictMtx;
-    std::map<dpp::snowflake, serverPersistenceWrapper> m_persistenceByGuild;
-
     std::unique_ptr<openai::chatGPT> m_chatGPT;
 
     std::filesystem::path m_workingDir;
+
+    messageArchiver m_messageArchiver;
 
     size_t m_OnStartFetchAmount = 5;
     size_t m_ContinousFetchAmount = 50;
     size_t m_chatGPTMessageContextRequirement = 50;
     size_t m_chatGPTPrefilterContextRequirement = 50;
+    size_t m_chatGPTLongTermContextRequirement = 500;
 };
 }
 

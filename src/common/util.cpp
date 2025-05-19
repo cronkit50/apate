@@ -88,23 +88,29 @@ dpp::snowflake UnixToSnowflake(const unsigned long long& unixTime){
     return ((unixTime * 1000) - 1420070400000) << 22;
 }
 
-std::string SnowflakeFriendly(const dpp::snowflake& flake){
+std::string SnowflakeFriendly(const dpp::snowflake& flake, const bool UTC){
     // seconds
     long long timeStampSinceEpoch = SnowflakeToUnix(flake) / 1000;
 
     std::time_t time(timeStampSinceEpoch);
-    tm localTime{ 0 };
+    tm UTCTime{ 0 };
 
-    localtime_s(&localTime, &time);
+    if (UTC){
+        gmtime_s(&UTCTime, &time);
+    }
+    else{
+        localtime_s(&UTCTime, &time);
+    }
+
 
     return std::format("{:04}-{:02}-{:02} {:02}:{:02}:{:02}",
-                       localTime.tm_year + 1900,
-                       localTime.tm_mon + 1,
-                       localTime.tm_mday,
+                       UTCTime.tm_year + 1900,
+                       UTCTime.tm_mon + 1,
+                       UTCTime.tm_mday,
 
-                       localTime.tm_hour,
-                       localTime.tm_min,
-                       localTime.tm_sec);
+                       UTCTime.tm_hour,
+                       UTCTime.tm_min,
+                       UTCTime.tm_sec);
 }
 
 

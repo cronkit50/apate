@@ -74,6 +74,9 @@
     <ClCompile Include="..\src\embed\embed.cpp">
       <Filter>Source Files\embed</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\discord\messagearchiver.cpp">
+      <Filter>Source Files\discord</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\cfg\cfg.hpp">
@@ -108,6 +111,9 @@
     </ClInclude>
     <ClInclude Include="..\src\embed\embed.hpp">
       <Filter>Header Files\embed</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\discord\messagearchiver.hpp">
+      <Filter>Header Files\discord</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

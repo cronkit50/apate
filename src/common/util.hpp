@@ -34,7 +34,7 @@ unsigned long long SnowflakeToUnix(const dpp::snowflake& flake);
 dpp::snowflake SnowflakeNow();
 dpp::snowflake UnixToSnowflake(const unsigned long long& unixTime);
 
-std::string SnowflakeFriendly (const dpp::snowflake &flake);
+std::string SnowflakeFriendly (const dpp::snowflake &flake, bool UTC = true);
 
 std::string ReplaceSubstring(const std::string_view& original,
                              const std::string_view& find,

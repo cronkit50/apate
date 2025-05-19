@@ -67,8 +67,11 @@ public:
     sql_rc StoreContinousMessage(const messageRecord& message, const dpp::snowflake lastMessageId = {});
 
     sql_rc GetLatestMessagesByChannel(const dpp::snowflake channelId, const size_t numMessages, std::vector<messageRecord> &message);
-
     size_t GetContinuousMessages(const dpp::snowflake channelId, const dpp::snowflake since);
+    dpp::snowflake GetOldestContinuousTimestamp(const dpp::snowflake channelId, const dpp::snowflake since);
+    sql_rc StoreEmbedding(const dpp::snowflake channelId, const dpp::snowflake messageId, std::vector<float>& embedding);
+    bool HasEmbedding(const dpp::snowflake channelId, const dpp::snowflake messageId);
+
     ~persistenceDatabase();
 
 private:
@@ -88,6 +91,7 @@ private:
     sql_rc CreateChannelTables(const dpp::snowflake channelId);
     std::string GetMessagesTableName(const dpp::snowflake channelId) const;
     std::string GetContinuityTrackTableName(const dpp::snowflake channelId) const;
+    std::string GetEmbeddingsTableName(const dpp::snowflake channelId) const;
 };
 
 
@@ -110,6 +114,11 @@ public:
     void RecordOldMessagesContinuous(const dpp::message_map &messages);
 
     size_t CountContinuousMessages(const dpp::snowflake channelId, const dpp::snowflake since);
+
+    void SaveEmbedding (const dpp::snowflake channelId, const dpp::snowflake messageId, std::vector<float>& embedding);
+    bool HasEmbedding(const dpp::snowflake channelId, const dpp::snowflake messageId);
+
+    dpp::snowflake GetOldestContinuousTimestamp(const dpp::snowflake channelId, const dpp::snowflake since);
 
     std::vector<messageRecord> GetContinousMessagesByChannel(const dpp::snowflake& channelID, const size_t numMessages);
     serverPersistence& swap(serverPersistence& rhs);
