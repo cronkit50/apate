@@ -13,6 +13,10 @@
     {
       "name": "dpp",
       "version>=": "10.1.2"
+    },
+    {
+      "name": "faiss",
+      "version>=": "1.8.0"
     }
   ],
   "builtin-baseline": "fce5c633c8beb6e57b5d5f2476b037b798fe13f1"

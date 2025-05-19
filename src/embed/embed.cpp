@@ -3,7 +3,7 @@
 #include "log/log.hpp"
 
 #include <curl/curl.h>
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
 
 static size_t CurlWriteToString(void* contents, size_t size, size_t nmemb, std::string* response) {
     const size_t totalSize = size * nmemb;
