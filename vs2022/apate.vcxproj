@@ -18,6 +18,7 @@
     <ClCompile Include="..\src\common\util.cpp" />
     <ClCompile Include="..\src\discord\discordbot.cpp" />
     <ClCompile Include="..\src\discord\serverpersistence.cpp" />
+    <ClCompile Include="..\src\embed\embed.cpp" />
     <ClCompile Include="..\src\log\log.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\chatgpt.cpp" />
@@ -32,6 +33,7 @@
     <ClInclude Include="..\src\chatgpt.hpp" />
     <ClInclude Include="..\src\discord\discordbot.hpp" />
     <ClInclude Include="..\src\discord\serverpersistence.hpp" />
+    <ClInclude Include="..\src\embed\embed.hpp" />
     <ClInclude Include="..\src\log\log.hpp" />
   </ItemGroup>
   <ItemGroup>

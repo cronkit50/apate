@@ -63,6 +63,12 @@
     <Filter Include="dll\sqlite3\release">
       <UniqueIdentifier>{af4ceb37-c010-4e19-b936-163c2b7fefa5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\embed">
+      <UniqueIdentifier>{67f9f18b-075f-4750-9a3e-9311da295606}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\embed">
+      <UniqueIdentifier>{0871aa9f-2d0f-4ca9-8170-ed70c9b425ec}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\main.cpp">
@@ -95,6 +101,9 @@
     <ClCompile Include="..\src\common\lrucache.cpp">
       <Filter>Source Files\common</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\embed\embed.cpp">
+      <Filter>Source Files\embed</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\cfg\cfg.hpp">
@@ -126,6 +135,9 @@
     </ClInclude>
     <ClInclude Include="..\src\common\lrucache.hpp">
       <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\embed\embed.hpp">
+      <Filter>Header Files\embed</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -3,6 +3,7 @@
 #include "common/util.hpp"
 #include "chatgpt.hpp"
 #include "discord/discordbot.hpp"
+#include "embed/embed.hpp"
 #include "log/log.hpp"
 
 #include <iostream>

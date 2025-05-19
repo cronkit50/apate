@@ -1,5 +1,6 @@
 #include "discordbot.hpp"
 
+#include "embed/embed.hpp"
 #include "log/log.hpp"
 #include "common/util.hpp"
 
@@ -142,8 +143,9 @@ void discordBot::HandleMessageEvent(const dpp::message_create_t& event){
                                       " No other output may precede this word. You do NOT provide responses. You are a pre-filter for deciding whether B-BOT should respond to the latest discord message considering the context"
                                       " of the preceding ones. Then, briefly explain your reasoning.";
 
-                std::string preFilterPrompt =  "You are provided a list of the most recent chat messages (oldest first). Evaluate whether B-BOT should respond to the most recent message, considering the context of the preceding ones."
-                                            " CRITICAL: Your response must begin with a single word: 'yes' or 'no', exactly, to indicate your decision. Only afterwards briefly explain your reasoning.\n\n";
+                std::string preFilterPrompt =  "You are provided a list of the most recent chat messages (oldest first). Evaluate whether B-BOT should respond to the most recent message, considering the context of the preceding ones. Users"
+                                               " may engage with B-BOT over multiple messages, so this is a factor in youe decision whether to respond."
+                                               " CRITICAL: Your response must begin with a single word: 'yes' or 'no', exactly, to indicate your decision. Only afterwards briefly explain your reasoning.\n\n";
 
                 std::string responsePrompt = "Here are the the most recent messages from the discord channel (oldest messages first): ";
 
