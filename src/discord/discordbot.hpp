@@ -62,10 +62,12 @@ private:
     messageArchiver m_messageArchiver;
 
     size_t m_OnStartFetchAmount = 5;
-    size_t m_ContinousFetchAmount = 50;
-    size_t m_chatGPTMessageContextRequirement = 50;
+
+    // hard limit via discord API
+    size_t m_ContinousFetchAmount = 100;
+    size_t m_chatGPTMessageContextRequirement = 15;
     size_t m_chatGPTPrefilterContextRequirement = 50;
-    size_t m_chatGPTLongTermContextRequirement = 500;
+    size_t m_chatGPTLongTermContextRequirement = 15000;
 };
 }
 

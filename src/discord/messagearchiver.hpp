@@ -3,7 +3,7 @@
 
 #include <discord/serverpersistence.hpp>
 
-
+#include <faiss/IndexHNSW.h>
 #include <dpp/dpp.h>
 
 #include <filesystem>
@@ -27,6 +27,24 @@ private:
         std::mutex        mutex;
     };
 
+    struct faissIndexWrapper{
+        // standard size for all mpnet
+        faissIndexWrapper(size_t vecDim = 768,
+                          int nearestNeighbors = 64,
+                          faiss::MetricType mType = faiss::MetricType::METRIC_INNER_PRODUCT) :
+            flatFaiss (vecDim, nearestNeighbors, mType) {
+        }
+
+        faissIndexWrapper(faissIndexWrapper&) = delete;
+        faissIndexWrapper(faissIndexWrapper&& rhs) = delete;
+        faissIndexWrapper& operator=(faissIndexWrapper&) = delete;
+        faissIndexWrapper& operator=(faissIndexWrapper&& rhs) = delete;
+
+        std::vector<dpp::snowflake> faissSnowflakes;
+        faiss::IndexHNSWFlat flatFaiss;
+        std::mutex           mutex;
+    };
+
 public:
     messageArchiver(void);
     messageArchiver(const std::filesystem::path &persistenceDir);
@@ -44,18 +62,25 @@ public:
 
     dpp::snowflake GetOldestContinuousTimestamp(const dpp::snowflake guildId, const dpp::snowflake channelId, const dpp::snowflake since);
 
+    messageRecord FindMessage(const dpp::snowflake guildId, const dpp::snowflake channelId, const dpp::snowflake messageId);
+
     std::vector<messageRecord> GetContinousMessages(const dpp::snowflake guildId,
                                                     const dpp::snowflake channelId,
                                                     const size_t         numMessages);
 
+    std::vector<messageRecord> GetContextRelevantMessages (const dpp::message  &message,
+                                                           const size_t         numMessages);
 private:
 
     serverPersistenceWrapper& GetGuildPersistence(const dpp::snowflake& guildID);
-
+    std::shared_ptr<faissIndexWrapper> GetFaiss (const dpp::snowflake& guildID, const dpp::snowflake channelId);
 
     std::mutex                                         m_persistenceDictMtx;
     std::map<dpp::snowflake, serverPersistenceWrapper> m_persistenceByGuild;
-    std::filesystem::path                              m_persistenceDir;
+
+    std::mutex                                                          m_faissDictMtx;
+    std::map<dpp::snowflake, std::shared_ptr<faissIndexWrapper>>        m_faissByChannel;
+    std::filesystem::path                                               m_persistenceDir;
 
 
 };

@@ -136,13 +136,7 @@ std::future<Embeddings> TransformSentences(const std::vector<std::string> &messa
                         auto& embeddingsArray = response["embedding"];
 
                         for(const auto& embeddings : embeddingsArray){
-                            std::vector<float> embedding;
-
-                            for(const auto& embeddingArray : embeddings){
-                                embedding = embeddingArray.get<std::vector<float>>();
-                            }
-
-                            result.push_back(embedding);
+                            result.push_back(embeddings.get<std::vector<float>>());
                         }
                     }
                     else{

@@ -10,11 +10,12 @@
 #include <filesystem>
 #include <memory>
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[]){
 
-    curl_global_init (CURL_GLOBAL_DEFAULT);
+    curl_global_init(CURL_GLOBAL_DEFAULT);
 
-    AddOnLog([](const logMessage& _, const std::string& formatted){ std::cout << formatted << '\n';});
+    AddOnLog([](const logMessage& _, const std::string& formatted){ std::cout<<formatted<<'\n'; });
+
 
     APATE_LOG_INFO("Starting Apate...");
 

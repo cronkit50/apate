@@ -18,6 +18,11 @@
 namespace discord
 {
 
+struct embeddingRecord{
+    dpp::snowflake     messageId;
+    std::vector<float> embedding;
+};
+
 struct messageRecord{
 
     messageRecord(const dpp::message& event);
@@ -72,6 +77,10 @@ public:
     sql_rc StoreEmbedding(const dpp::snowflake channelId, const dpp::snowflake messageId, std::vector<float>& embedding);
     bool HasEmbedding(const dpp::snowflake channelId, const dpp::snowflake messageId);
 
+    bool FindMessage(const dpp::snowflake& channelID, const dpp::snowflake messageId, messageRecord& message);
+
+    std::vector<embeddingRecord> GetVectorEmbeddings(const dpp::snowflake channelId);
+
     ~persistenceDatabase();
 
 private:
@@ -121,6 +130,10 @@ public:
     dpp::snowflake GetOldestContinuousTimestamp(const dpp::snowflake channelId, const dpp::snowflake since);
 
     std::vector<messageRecord> GetContinousMessagesByChannel(const dpp::snowflake& channelID, const size_t numMessages);
+    bool FindMessage(const dpp::snowflake& channelID, const dpp::snowflake messageId, messageRecord& message);
+
+    std::vector<embeddingRecord> GetVectorEmbeddings(const dpp::snowflake channelId);
+
     serverPersistence& swap(serverPersistence& rhs);
 
 private:

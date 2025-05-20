@@ -259,10 +259,6 @@ void chatGPT::HandleQueue(void){
         headers = curl_slist_append(headers, ("Authorization: Bearer " + m_openAI_Key).c_str());
 
         std::string requestDataStr = request.json.dump();
-
-        APATE_LOG_DEBUG(requestDataStr);
-
-
         std::string curlResponse;
 
         curl_easy_setopt(m_curl, CURLOPT_URL, openAI_API_URL);
